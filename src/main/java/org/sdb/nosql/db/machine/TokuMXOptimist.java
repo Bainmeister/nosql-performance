@@ -14,9 +14,10 @@ import com.mongodb.WriteResult;
 
 public class TokuMXOptimist extends TokuMX {
 
-	TokuMXOptimist(MongoConnection connection) {
+	public TokuMXOptimist(MongoConnection connection) {
 		super(connection);
 	}
+	
 
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {

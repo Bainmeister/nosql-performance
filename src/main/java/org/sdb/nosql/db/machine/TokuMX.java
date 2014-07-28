@@ -23,18 +23,22 @@ public class TokuMX implements DBMachine {
 	DB db;
 	DBCollection collection;
 	
-	TokuMX(MongoConnection connection){
+	public TokuMX(MongoConnection connection){
 		db = connection.getDb();
 		collection = connection.getCollection();
 	}
 
+	@SuppressWarnings("unused")
+	private TokuMX(){
+		
+	}
+	
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 	
 		
 		for (String key : keys){
-			ObjectId key1 = new ObjectId(key);
-			BasicDBObject searchQuery = new BasicDBObject("_id",key1);
+			BasicDBObject searchQuery = new BasicDBObject("name",key);
 
 			DBCursor cursor = collection.find(searchQuery);
 
@@ -59,12 +63,12 @@ public class TokuMX implements DBMachine {
 		final ActionRecord record = new ActionRecord();
 		
 		for (String key : keys){
-			ObjectId keyObj = new ObjectId(key);
+			//ObjectId keyObj = new ObjectId(key);
 			
 			
 			BasicDBObject newDocument = new BasicDBObject();
 			newDocument.append("$set", new BasicDBObject().append("balance", 200));
-			BasicDBObject searchQuery = new BasicDBObject().append("_id",keyObj);
+			BasicDBObject searchQuery = new BasicDBObject().append("name",key);
 		 
 			collection.update(searchQuery, newDocument);
 			
@@ -86,12 +90,12 @@ public class TokuMX implements DBMachine {
 		final ActionRecord record = new ActionRecord();
 		
 		for (String key : keys){
-			ObjectId keyObj = new ObjectId(key);
+			//ObjectId keyObj = new ObjectId(key);
 			//BasicDBObject query = new BasicDBObject("_id",key1);
 			
 			BasicDBObject newDocument = new BasicDBObject().append("$inc", new BasicDBObject().append("increment", 1));
 	 
-			collection.update(new BasicDBObject().append("_id", keyObj), newDocument);
+			collection.update(new BasicDBObject().append("name", key), newDocument);
 			
 			//Wait for millis
 			if (waitMillis > 0);
@@ -106,10 +110,10 @@ public class TokuMX implements DBMachine {
 
 		for (String key :keys){
 			//Create usable keys
-			ObjectId keyObj1 = new ObjectId(key);
+			//ObjectId keyObj1 = new ObjectId(key);
 			
 			//Setup a search query
-			BasicDBObject searchQuery1 = new BasicDBObject("_id",keyObj1);
+			BasicDBObject searchQuery1 = new BasicDBObject("name",key);
 			
 			//Set the element to return
 			BasicDBObject fields = new BasicDBObject();
@@ -126,7 +130,7 @@ public class TokuMX implements DBMachine {
 			//Add 1 to the value
 			BasicDBObject newDocument = new BasicDBObject();
 			newDocument.append("$set", new BasicDBObject().append("increment", doc1Mod +1));
-			BasicDBObject searchQuery = new BasicDBObject().append("_id",keyObj1);
+			BasicDBObject searchQuery = new BasicDBObject().append("name",key);
 			collection.update(searchQuery, newDocument);	
 		}
 		
@@ -148,12 +152,12 @@ public class TokuMX implements DBMachine {
 		int transAmount = key1==key2 ? 0:100;
 		
 		//Create usable keys from key Strings
-		ObjectId keyObj1 = new ObjectId(key1);
-		ObjectId keyObj2 = new ObjectId(key2);
+		//ObjectId keyObj1 = new ObjectId(key1);
+		//ObjectId keyObj2 = new ObjectId(key2);
 		
 		//Setup search querys
-		BasicDBObject query1 = new BasicDBObject("_id",keyObj1);
-		BasicDBObject query2 = new BasicDBObject("_id",keyObj2);
+		BasicDBObject query1 = new BasicDBObject("name",key1);
+		BasicDBObject query2 = new BasicDBObject("name",key2);
 		
 		//Query to Decrement balance 1
 		BasicDBObject set1 = new BasicDBObject();

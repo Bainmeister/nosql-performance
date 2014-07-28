@@ -15,7 +15,7 @@ import com.mongodb.WriteResult;
 
 public class TokuMXPessimist extends TokuMX{
 
-	TokuMXPessimist(MongoConnection connection) {
+	public TokuMXPessimist(MongoConnection connection) {
 		super(connection);
 	}
 

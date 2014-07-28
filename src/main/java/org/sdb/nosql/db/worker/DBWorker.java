@@ -23,7 +23,9 @@ package org.sdb.nosql.db.worker;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
@@ -32,6 +34,14 @@ import io.narayana.perf.Result;
 import io.narayana.perf.Worker;
 
 import org.sdb.nosql.db.compensation.javax.RunnerService;
+import org.sdb.nosql.db.connection.FoundationConnection;
+import org.sdb.nosql.db.connection.MongoConnection;
+import org.sdb.nosql.db.keys.generation.KeyGen;
+import org.sdb.nosql.db.machine.DBMachine;
+import org.sdb.nosql.db.machine.FoundationDB;
+import org.sdb.nosql.db.machine.TokuMX;
+import org.sdb.nosql.db.machine.TokuMXOptimist;
+import org.sdb.nosql.db.machine.TokuMXPessimist;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 /**
@@ -50,6 +60,8 @@ public class DBWorker<T> implements Worker<T>{
 	private List<String> contendedRecords;
 	private WorkerParameters params;
 	
+	DBMachine machine;
+	
 	//Construct
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
 		this.contendedRecords = contendedRecords;
@@ -58,7 +70,21 @@ public class DBWorker<T> implements Worker<T>{
 		//now connect to the required db and setup relevant database machine.
 		//Call the doWork 
 		if (!params.isCompensator){
-			
+				
+			//Set up the relevant Database Machine with a connection to the DB
+			if (params.dbType == DBTypes.FOUNDATIONDB){
+				machine = new FoundationDB(new FoundationConnection());
+				
+			}else if (params.dbType == DBTypes.TOKUMX){
+				machine = new TokuMX(new MongoConnection());
+				
+			}else if (params.dbType == DBTypes.TOKUMX_ACID_OC)	{
+				machine = new TokuMXOptimist(new MongoConnection());
+				
+			}else if (params.dbType == DBTypes.TOKUMX_ACID_PC)	{
+				machine = new TokuMXPessimist(new MongoConnection());
+			}
+				
 		}
 	}
 			
@@ -78,16 +104,71 @@ public class DBWorker<T> implements Worker<T>{
 	        return null;
 		}
 		
+		//Carry out a batch of work
+		for (int i = 0 ; i < batchSize;i++){
+			ActionRecord record = workload();
+		}
 		
-		
-
-		
-		System.out.println("time taken: " + timetaken);
-		
+		//System.out.println("time taken: " + timetaken);
+		workTimeMillis = System.currentTimeMillis();
 		return null;
 	}
 	
-    private static RunnerService createWebServiceClient() {
+    private ActionRecord workload() {
+    	ActionRecord record = new ActionRecord();
+    	
+    	final int transactionSize = params.maxTransactionSize == params.minTransactionSize ? params.maxTransactionSize:ThreadLocalRandom.current().nextInt(params.maxTransactionSize)+params.minTransactionSize; 
+    	List<String> keysToUse = getKeysForTransaction(transactionSize); 
+    	
+    	//Get Random number to assign task
+    	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
+    	if (rand1< params.chanceOfRead){
+    		//Reader
+    		record = machine.read(keysToUse,params.millisBetweenActions);
+    		
+    	}else if(rand1 < params.chanceOfWrite){
+    		//Writer
+    		record = machine.update(keysToUse, params.millisBetweenActions);
+    		
+    	}else if(rand1 < params.chanceOfReadModifyWrite){
+    		//Reader + Writer
+    		record = machine.readModifyWrite(keysToUse, params.millisBetweenActions);
+    		
+    	}else if (rand1 < params.chanceOfBalanceTransfer){
+    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1), params.millisBetweenActions);
+    	
+    	}else if (rand1 < params.chanceOfIncrementalUpdate){
+    		record = machine.incrementalUpdate(keysToUse, params.millisBetweenActions);
+    		
+    	}
+		return record;
+	}
+
+    private List<String> getKeysForTransaction(int numberToGet){
+
+    	List<String>  keys= new ArrayList<String> ();
+    	List<Integer>  used= new ArrayList<Integer> ();
+    	
+    	//If the transaction is too large, reduce it to a size we can hanle.
+    	if(numberToGet > contendedRecords.size()){
+    		System.out.println("Warning! Transaction size too large - reducing to "+contendedRecords.size());
+    		numberToGet =  contendedRecords.size();
+    	}
+    	
+    	while(keys.size() < numberToGet){
+    		int recordAt = ThreadLocalRandom.current().nextInt(contendedRecords.size()); 
+    		
+    		if(!used.contains(recordAt)){
+    			used.add(recordAt);
+    			keys.add(contendedRecords.get(recordAt));
+    		}
+    	}
+    	
+    	return keys;
+    }
+    
+    
+	private static RunnerService createWebServiceClient() {
 
         try {
             URL wsdlLocation = new URL("http://localhost:8080/test/HotelServiceService?wsdl");

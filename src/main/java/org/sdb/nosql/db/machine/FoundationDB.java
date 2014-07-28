@@ -44,10 +44,15 @@ public class FoundationDB implements DBMachine{
 
     private Database db;
 
-	FoundationDB(FoundationConnection connection){
+	public FoundationDB(FoundationConnection connection){
     	db = connection.getDb();
     }
     
+	@SuppressWarnings("unused")
+	private FoundationDB(){
+		
+	}
+	
     /**
      * encode and int ready for FDB storage
      * @param value
