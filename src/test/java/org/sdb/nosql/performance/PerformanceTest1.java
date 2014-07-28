@@ -45,7 +45,7 @@ import org.sdb.nosql.db.keys.generation.KeyGen;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.DBWorker;
-import org.sdb.nosql.db.worker.TestParameters;
+import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -56,7 +56,7 @@ import com.mongodb.MongoClient;
 public class PerformanceTest1 {
 
 	//Test parameters
-	private TestParameters params = new TestParameters();
+	private WorkerParameters params = new WorkerParameters();
 	
 	
 	@Deployment

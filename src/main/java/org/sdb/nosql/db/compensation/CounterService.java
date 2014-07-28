@@ -36,7 +36,7 @@ public class CounterService {
     @Compensatable
 	public void updateCounters(String string, String string2, int amount,
 			double compensateProbability) {
-       //System.out.println("Key 1: " +string+"Key 2: " +string2);
+       
     	counterManager.incrimentCounter(string, amount);
         counterManager.decrementCounter(string2, amount);
 

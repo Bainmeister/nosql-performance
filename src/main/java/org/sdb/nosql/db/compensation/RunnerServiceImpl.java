@@ -2,6 +2,7 @@ package org.sdb.nosql.db.compensation;
 
 import org.jboss.narayana.compensations.api.TransactionCompensatedException;
 import org.sdb.nosql.db.compensation.javax.RunnerService;
+import org.sdb.nosql.db.worker.WorkerParameters;
 
 import javax.inject.Inject;
 import javax.jws.WebMethod;
@@ -36,15 +37,12 @@ public class RunnerServiceImpl implements RunnerService {
     	this.compensateProbability = compensateProbability;
     	this.availibleKeys = keys;
     	
-    	//DBWorker<Void> worker = new DBWorker<Void>(keys);
-    	
         long millis = System.currentTimeMillis();
         for (int i = 0; i < loops; i++) {
         	
-        	//Select two Random keys
+        	//Select two Random keys -shouldnt matter if its the same one.
             int rand1 = rand.nextInt(availibleKeys.size());
             int rand2 = rand.nextInt(availibleKeys.size());
-            
             
         	//update them
             try {
@@ -60,5 +58,11 @@ public class RunnerServiceImpl implements RunnerService {
        
         return timeTaken;
     }
+
+	@Override
+	public long doWork(WorkerParameters params) {
+		// This method does what doWork does for a standard DB interaction.
+		return 0;
+	}
 
 }

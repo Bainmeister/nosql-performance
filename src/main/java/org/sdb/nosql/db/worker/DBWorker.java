@@ -48,26 +48,39 @@ public class DBWorker<T> implements Worker<T>{
 	private long finiTimeMillis;
 	
 	private List<String> contendedRecords;
-	private TestParameters params;
+	private WorkerParameters params;
+	
 	//Construct
-	public DBWorker(List<String> contendedRecords, TestParameters params){
+	public DBWorker(List<String> contendedRecords, WorkerParameters params){
 		this.contendedRecords = contendedRecords;
 		this.params = params;
 		
 		//now connect to the required db and setup relevant database machine.
-
+		//Call the doWork 
+		if (!params.isCompensator){
+			
+		}
 	}
 			
 	
 	@Override
 	public T doWork(T context, int batchSize, Result<T> measurement) {
 		
-		//ActionRecord record = new ActionRecord();
+		long timetaken = 0;
+		
+		//Call the doWork 
+		if (params.isCompensator){
+			
+			//TODO add and actionRecord to pass back rather than workTimeMillis
+	        RunnerService runnerService = createWebServiceClient();
+	        workTimeMillis = runnerService.doWork(params);
+	        workTimeMillis  = timetaken;
+	        return null;
+		}
 		
 		
 		
-        RunnerService runnerService = createWebServiceClient();
-        long timetaken = runnerService.balanceTransfer(params.batchSize, contendedRecords, 0.0);
+
 		
 		System.out.println("time taken: " + timetaken);
 		

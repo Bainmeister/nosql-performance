@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.jws.WebService;
 
+import org.sdb.nosql.db.worker.WorkerParameters;
+
 
 
 /**
@@ -13,5 +15,7 @@ import javax.jws.WebService;
 public interface RunnerService {
 
     public long balanceTransfer(int loops, List<String> keys, double compensateProbability);
+
+	public long doWork(WorkerParameters params);
     
 }
