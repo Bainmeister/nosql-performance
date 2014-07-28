@@ -21,8 +21,6 @@ public class CounterManager {
 
     @Inject
     private CompensationManager compensationManager;
-
-   
     
     @Inject
     IncrementCounterData incrementCounterData;
@@ -37,21 +35,9 @@ public class CounterManager {
     }
 
 
-    @TxCompensate(UndoIncrement.class)
-    @TxConfirm(ConfirmIncrement.class)
     public void incrimentCounter(int counter, int amount) {
-
-        //incrementCounterData.setCounter(counter);
-       // incrementCounterData.setAmount(amount);
-
-        MongoClient mongoClient = getMongoClient();
-        DB database = mongoClient.getDB("test");
-        DBCollection accounts = database.getCollection("counters");
-
-        accounts.update(new BasicDBObject("name", String.valueOf(counter)), new BasicDBObject("$inc", new BasicDBObject("value", amount)));
-
+    	incrimentCounter(String.valueOf(counter), amount);
     }
-
     @TxCompensate(UndoIncrement.class)
     @TxConfirm(ConfirmIncrement.class)
 	public void incrimentCounter(String key, int amount) {
@@ -68,21 +54,10 @@ public class CounterManager {
 		
 	}
     
-    @TxCompensate(UndoDecrement.class)
-    @TxConfirm(ConfirmDecrement.class)
+
     public void decrementCounter(int counter, int amount) {
-
-        decrementCounterData.setCounter(counter);
-        decrementCounterData.setAmount(amount);
-
-        MongoClient mongoClient = getMongoClient();
-        DB database = mongoClient.getDB("test");
-        DBCollection accounts = database.getCollection("counters");
-
-        accounts.update(new BasicDBObject("name", String.valueOf(counter)), new BasicDBObject("$inc", new BasicDBObject("value", -1 * amount)));
-
+    	decrementCounter(String.valueOf(counter),  amount);
     }
-    
     @TxCompensate(UndoDecrement.class)
     @TxConfirm(ConfirmDecrement.class)
 	public void decrementCounter(String key, int amount)  {
