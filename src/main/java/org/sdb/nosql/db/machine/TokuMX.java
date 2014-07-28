@@ -6,7 +6,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.bson.BasicBSONObject;
-import org.bson.types.ObjectId;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
@@ -90,8 +89,6 @@ public class TokuMX implements DBMachine {
 		final ActionRecord record = new ActionRecord();
 		
 		for (String key : keys){
-			//ObjectId keyObj = new ObjectId(key);
-			//BasicDBObject query = new BasicDBObject("_id",key1);
 			
 			BasicDBObject newDocument = new BasicDBObject().append("$inc", new BasicDBObject().append("increment", 1));
 	 

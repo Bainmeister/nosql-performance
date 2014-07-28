@@ -2,6 +2,9 @@ package org.sdb.nosql.db.compensation;
 
 import org.jboss.narayana.compensations.api.Compensatable;
 import org.jboss.narayana.compensations.api.CompensationManager;
+import org.sdb.nosql.db.connection.DBConnection;
+
+import com.mongodb.DBCollection;
 
 import javax.inject.Inject;
 
@@ -23,10 +26,10 @@ public class CounterService {
     CompensationManager compensationManager;
 
     @Compensatable
-    public void updateCounters(int counter1, int counter2, int amount, double compensateProbability) {
+    public void updateCounters(int counter1, int counter2, int amount, double compensateProbability, DBCollection col) {
 
-        counterManager.incrimentCounter(counter2, amount);
-        counterManager.decrementCounter(counter1, amount);
+        counterManager.incrimentCounter(counter2, amount,col);
+        counterManager.decrementCounter(counter1, amount,col);
 
         if (rand.nextDouble() <= compensateProbability) {
             compensationManager.setCompensateOnly();
@@ -35,10 +38,10 @@ public class CounterService {
     
     @Compensatable
 	public void updateCounters(String string, String string2, int amount,
-			double compensateProbability) {
+			double compensateProbability, DBCollection col) {
        
-    	counterManager.incrimentCounter(string, amount);
-        counterManager.decrementCounter(string2, amount);
+    	counterManager.incrimentCounter(string, amount, col );
+        counterManager.decrementCounter(string2, amount,col );
 
         if (rand.nextDouble() <= compensateProbability) {
             compensationManager.setCompensateOnly();

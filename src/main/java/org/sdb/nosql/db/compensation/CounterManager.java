@@ -8,6 +8,7 @@ import com.mongodb.MongoClient;
 import org.jboss.narayana.compensations.api.CompensationManager;
 import org.jboss.narayana.compensations.api.TxCompensate;
 import org.jboss.narayana.compensations.api.TxConfirm;
+import org.sdb.nosql.db.connection.DBConnection;
 
 import javax.inject.Inject;
 
@@ -35,41 +36,34 @@ public class CounterManager {
     }
 
 
-    public void incrimentCounter(int counter, int amount) {
-    	incrimentCounter(String.valueOf(counter), amount);
+    public void incrimentCounter(int counter, int amount, DBCollection col) {
+    	incrimentCounter(String.valueOf(counter), amount, col);
     }
     @TxCompensate(UndoIncrement.class)
     @TxConfirm(ConfirmIncrement.class)
-	public void incrimentCounter(String key, int amount) {
+	public void incrimentCounter(String key, int amount,  DBCollection col) {
         
     	incrementCounterData.setoID(key);
         incrementCounterData.setAmount(amount);
 		incrementCounterData.setCounterAndAmount(key,amount);
-        MongoClient mongoClient = getMongoClient();
-        DB database = mongoClient.getDB("test");
-        DBCollection accounts = database.getCollection("counters");
         
-        accounts.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", amount)));
-
-		
+        col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", amount)));
+	
 	}
     
 
-    public void decrementCounter(int counter, int amount) {
-    	decrementCounter(String.valueOf(counter),  amount);
+    public void decrementCounter(int counter, int amount, DBCollection col) {
+    	decrementCounter(String.valueOf(counter),  amount, col);
     }
     @TxCompensate(UndoDecrement.class)
     @TxConfirm(ConfirmDecrement.class)
-	public void decrementCounter(String key, int amount)  {
+	public void decrementCounter(String key, int amount, DBCollection col)  {
 
         decrementCounterData.setoID(key);
         decrementCounterData.setAmount(amount);
 		incrementCounterData.setCounterAndAmount(key,amount);
-        MongoClient mongoClient = getMongoClient();
-        DB database = mongoClient.getDB("test");
-        DBCollection accounts = database.getCollection("counters");
 
-        accounts.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", -1 * amount)));
+        col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", -1 * amount)));
 
     }
     

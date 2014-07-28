@@ -2,7 +2,11 @@ package org.sdb.nosql.db.compensation;
 
 import org.jboss.narayana.compensations.api.TransactionCompensatedException;
 import org.sdb.nosql.db.compensation.javax.RunnerService;
+import org.sdb.nosql.db.connection.DBConnection;
+import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.worker.WorkerParameters;
+
+import com.mongodb.DBCollection;
 
 import javax.inject.Inject;
 import javax.jws.WebMethod;
@@ -37,6 +41,10 @@ public class RunnerServiceImpl implements RunnerService {
     	this.compensateProbability = compensateProbability;
     	this.availibleKeys = keys;
     	
+    	MongoConnection conn = new MongoConnection();
+    	DBCollection col = conn.getCollection();
+    	
+    	
         long millis = System.currentTimeMillis();
         for (int i = 0; i < loops; i++) {
         	
@@ -46,13 +54,14 @@ public class RunnerServiceImpl implements RunnerService {
             
         	//update them
             try {
-            	counterService.updateCounters(    availibleKeys.get(rand1), availibleKeys.get(rand2), 1, compensateProbability);
+            	counterService.updateCounters(    availibleKeys.get(rand1), availibleKeys.get(rand2), 1, compensateProbability, col);
             } catch (TransactionCompensatedException e) {
                 compensations.incrementAndGet();
             }
             
         }
         long timeTaken = (System.currentTimeMillis() - millis);
+        conn.disconnectDB();
         
         availibleKeys.clear();
        

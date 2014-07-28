@@ -25,31 +25,20 @@ import java.security.KeyStore;
 import java.util.List;
 
 import io.narayana.perf.Result;
-import io.narayana.perf.WorkerWorkload;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ArchivePaths;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.sdb.nosql.db.compensation.CounterService;
-import org.sdb.nosql.db.connection.DBConnection;
+
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.keys.generation.KeyGen;
-import org.sdb.nosql.db.machine.DBMachine;
-import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.DBWorker;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.MongoClient;
 
 public class PerformanceTest2 {
@@ -100,5 +89,28 @@ public class PerformanceTest2 {
 		System.out.println("thread count:    "  + measurement.getThreadCount());
 		System.out.println("number of calls:    "  + measurement.getNumberOfCalls());
 		System.out.println("***************************");
+	}
+	
+	@After
+	public void accountCheck() throws Exception {
+
+		MongoClient mongo = new MongoClient("localhost", 27017);
+		DB database = mongo.getDB("test");
+		DBCollection counters = database.getCollection("counters");		
+		DBCursor allCounters = counters.find();
+		
+		int i = 0;
+		
+		try {
+			while(allCounters.hasNext()) {
+				i = i + (Integer) allCounters.next().get("value");	
+			}
+		} finally {
+			allCounters.close();
+		}
+		
+		System.out.println("variance= "+ i);
+		
+		
 	}
 }

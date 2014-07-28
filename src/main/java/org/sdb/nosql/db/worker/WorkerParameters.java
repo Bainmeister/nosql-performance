@@ -5,12 +5,12 @@ public class WorkerParameters {
 	public final int dbType = DBTypes.TOKUMX;
 	
 	public final int threadCount = 1;
-	public final int numberOfCalls = 1000;
+	public final int numberOfCalls = 50000;
 	public final int batchSize = 10;
 	
-	public final int chanceOfRead = 1000;
+	public final int chanceOfRead = 0001;
 	public final int chanceOfWrite =0;
-	public final int chanceOfBalanceTransfer = 0;
+	public final int chanceOfBalanceTransfer = 999;
 	public final int chanceOfReadModifyWrite = 0;
 	public final int chanceOfIncrementalUpdate =0; 
 
