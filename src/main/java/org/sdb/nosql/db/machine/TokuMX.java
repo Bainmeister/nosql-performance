@@ -182,33 +182,6 @@ public class TokuMX implements DBMachine {
 		
 		return record;
 	}
-	
-	public HashMap<String, String> getKeysFromDB(int numberOfkeys){
-		
-		HashMap<String, String> keys = new HashMap<String, String>();	
-		
-		if (collection == null)
-			return null;
-		
-		long collectionCount = collection.getCount();
-
-		if (collectionCount >= numberOfkeys){
-					
-			//Get Random documents from the DB and store them in the key map.
-			while (keys.size() < numberOfkeys){
-				final int rand = ThreadLocalRandom.current() .nextInt((int) collectionCount);
-				BasicDBObject query = new BasicDBObject();
-				BasicDBObject field = new BasicDBObject();
-				field.put("_id", 1);
-				keys.put((((BasicBSONObject) (collection.find(query,field).limit(-1).skip(rand)).next()).getString("_id")),"");
-			}
-			
-		}else{
-			System.out.println("check settings...");
-		}
-		
-		return keys;
-	}
 
 	public void addTable(String name) {
 		db.getCollection(name);
