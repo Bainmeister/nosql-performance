@@ -67,25 +67,7 @@ public class DBWorker<T> implements Worker<T>{
 		this.contendedRecords = contendedRecords;
 		this.params = params;
 		
-		//now connect to the required db and setup relevant database machine.
-		//Call the doWork 
-		if (!params.isCompensator){
-				
-			//Set up the relevant Database Machine with a connection to the DB
-			if (params.dbType == DBTypes.FOUNDATIONDB){
-				machine = new FoundationDB(new FoundationConnection());
-				
-			}else if (params.dbType == DBTypes.TOKUMX){
-				machine = new TokuMX(new MongoConnection());
-				
-			}else if (params.dbType == DBTypes.TOKUMX_ACID_OC)	{
-				machine = new TokuMXOptimist(new MongoConnection());
-				
-			}else if (params.dbType == DBTypes.TOKUMX_ACID_PC)	{
-				machine = new TokuMXPessimist(new MongoConnection());
-			}
-				
-		}
+
 	}
 			
 	
@@ -95,13 +77,33 @@ public class DBWorker<T> implements Worker<T>{
 		long timetaken = 0;
 		
 		//Call the doWork 
-		if (params.isCompensator){
+		if (params.isCompensator()){
 			
 			//TODO add and actionRecord to pass back rather than workTimeMillis
 	        RunnerService runnerService = createWebServiceClient();
 	        workTimeMillis = runnerService.doWork(params);
 	        workTimeMillis  = timetaken;
 	        return null;
+		}
+		
+		//now connect to the required db and setup relevant database machine.
+		//Call the doWork 
+		if (!params.isCompensator()){
+				
+			//Set up the relevant Database Machine with a connection to the DB
+			if (params.getDbType() == DBTypes.FOUNDATIONDB){
+				machine = new FoundationDB(new FoundationConnection());
+				
+			}else if (params.getDbType() == DBTypes.TOKUMX){
+				machine = new TokuMX(new MongoConnection());
+				
+			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_OC)	{
+				machine = new TokuMXOptimist(new MongoConnection());
+				
+			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_PC)	{
+				machine = new TokuMXPessimist(new MongoConnection());
+			}
+				
 		}
 		
 		//Carry out a batch of work
@@ -117,28 +119,28 @@ public class DBWorker<T> implements Worker<T>{
     private ActionRecord workload() {
     	ActionRecord record = new ActionRecord();
     	
-    	final int transactionSize = params.maxTransactionSize == params.minTransactionSize ? params.maxTransactionSize:ThreadLocalRandom.current().nextInt(params.maxTransactionSize)+params.minTransactionSize; 
+    	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
     	List<String> keysToUse = getKeysForTransaction(transactionSize); 
     	
     	//Get Random number to assign task
     	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
-    	if (rand1< params.chanceOfRead){
+    	if (rand1< params.getChanceOfRead()){
     		//Reader
-    		record = machine.read(keysToUse,params.millisBetweenActions);
+    		record = machine.read(keysToUse,params.getMillisBetweenActions());
     		
-    	}else if(rand1 < params.chanceOfWrite){
+    	}else if(rand1 < params.getChanceOfWrite()){
     		//Writer
-    		record = machine.update(keysToUse, params.millisBetweenActions);
+    		record = machine.update(keysToUse, params.getMillisBetweenActions());
     		
-    	}else if(rand1 < params.chanceOfReadModifyWrite){
+    	}else if(rand1 < params.getChanceOfReadModifyWrite()){
     		//Reader + Writer
-    		record = machine.readModifyWrite(keysToUse, params.millisBetweenActions);
+    		record = machine.readModifyWrite(keysToUse, params.getMillisBetweenActions());
     		
-    	}else if (rand1 < params.chanceOfBalanceTransfer){
-    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1), params.millisBetweenActions);
+    	}else if (rand1 < params.getChanceOfBalanceTransfer()){
+    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1), params.getMillisBetweenActions());
     	
-    	}else if (rand1 < params.chanceOfIncrementalUpdate){
-    		record = machine.incrementalUpdate(keysToUse, params.millisBetweenActions);
+    	}else if (rand1 < params.getChanceOfIncrementalUpdate()){
+    		record = machine.incrementalUpdate(keysToUse, params.getMillisBetweenActions());
     		
     	}
 		return record;

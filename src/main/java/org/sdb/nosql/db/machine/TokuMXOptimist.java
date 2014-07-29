@@ -22,10 +22,6 @@ public class TokuMXOptimist extends TokuMX {
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		ActionRecord record = new ActionRecord();
-		//Create usable keys from key Strings
-		List<ObjectId> keyList = new ArrayList<ObjectId>();
-		for (String key: keys)
-			keyList.add( new ObjectId(key));
 		
 		db.requestStart();
 		try{
@@ -34,8 +30,8 @@ public class TokuMXOptimist extends TokuMX {
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction("mvcc"));
-				for (ObjectId key : keyList)
-					collection.find(new BasicDBObject("_id",key));
+				for (String key : keys)
+					collection.find(new BasicDBObject("name",key));
 				db.command(rollbackTransaction());
 				
 			} catch (MongoException e){
@@ -52,12 +48,6 @@ public class TokuMXOptimist extends TokuMX {
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		
-		
-		//Create usable keys from key Strings
-		List<ObjectId> keyList = new ArrayList<ObjectId>();
-		for (String key: keys)
-			keyList.add( new ObjectId(key));
-		
 		db.requestStart();
 		try{
 			
@@ -66,8 +56,8 @@ public class TokuMXOptimist extends TokuMX {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction("mvcc"));
 				boolean updateSucceeded = true;
-				for (ObjectId key : keyList){
-					WriteResult write = collection.update(new BasicDBObject("_id",key),new BasicDBObject("value",2000));
+				for (String key : keys){
+					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",2000));
 					waitBetweenActions(waitMillis);	
 					if (write.getN() == 0)	
 						updateSucceeded =false;
@@ -100,12 +90,12 @@ public class TokuMXOptimist extends TokuMX {
 		int transAmount = key1==key2 ? 0:100;
 		
 		//Create usable keys from key Strings
-		ObjectId keyObj1 = new ObjectId(key1);
-		ObjectId keyObj2 = new ObjectId(key2);
+		//ObjectId keyObj1 = new ObjectId(key1);
+		//ObjectId keyObj2 = new ObjectId(key2);
 		
 		//Setup search querys
-		BasicDBObject query1 = new BasicDBObject("_id",keyObj1);
-		BasicDBObject query2 = new BasicDBObject("_id",keyObj2);
+		BasicDBObject query1 = new BasicDBObject("name",key1);
+		BasicDBObject query2 = new BasicDBObject("name",key2);
 		
 		//Query to Decrement balance 1
 		BasicDBObject set1 = new BasicDBObject();
