@@ -187,7 +187,7 @@ public class TokuMX implements DBMachine {
 		db.getCollection(name);
 	}
 
-	public ActionRecord writeLog(int numberToWrite, int waitMillis) {
+	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
 		ActionRecord record = new ActionRecord();
 		
 		for (int i = 0; i<numberToWrite; i++){
@@ -202,7 +202,7 @@ public class TokuMX implements DBMachine {
 		return record;
 	}
 
-	public ActionRecord readLog(int numberToRead , int waitMillis) {
+	public ActionRecord logRead(int numberToRead , int waitMillis) {
 		
 		ActionRecord record = new ActionRecord();
 		

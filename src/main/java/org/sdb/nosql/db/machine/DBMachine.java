@@ -34,12 +34,6 @@ import org.sdb.nosql.db.performance.ActionRecord;
  */
 public interface DBMachine {
 	
-	/**
-	 * Get numberOfKeys from the database
-	 * @param numberOfkeys
-	 * @return
-	 */
-	//HashMap<String, String> getKeysFromDB(int numberOfkeys);
 	
 	/**
 	 * Performs (transactionSize) reads against the database that is currently connected.
@@ -77,11 +71,9 @@ public interface DBMachine {
 	
 	ActionRecord balanceTransfer(String key1, String key2, int waitMillis);
 	
-	ActionRecord incrementalUpdate(List<String> keys, int waitMillis);
+	ActionRecord logInsert(int numberToWrite, int waitMillis);
 	
-	ActionRecord writeLog(int numberToWrite, int waitMillis);
-	
-	ActionRecord readLog(int numberToRead, int waitMillis);
+	ActionRecord logRead(int numberToRead, int waitMillis);
 	
 	void addTable(String name);
 	

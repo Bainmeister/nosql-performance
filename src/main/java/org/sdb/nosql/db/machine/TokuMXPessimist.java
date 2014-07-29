@@ -149,7 +149,7 @@ public class TokuMXPessimist extends TokuMX{
 	}
 
 	@Override
-	public ActionRecord writeLog(int numberToWrite, int waitMillis) {
+	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
 		ActionRecord record = new ActionRecord();
 		
 		db.requestStart();
@@ -181,7 +181,7 @@ public class TokuMXPessimist extends TokuMX{
 	}
 
 	@Override
-	public ActionRecord readLog(int numberToRead, int waitMillis) {
+	public ActionRecord logRead(int numberToRead, int waitMillis) {
 		ActionRecord record = new ActionRecord();
 		
 		try {

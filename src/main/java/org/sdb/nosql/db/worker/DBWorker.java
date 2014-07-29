@@ -140,7 +140,7 @@ public class DBWorker<T> implements Worker<T>{
     		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1), params.getMillisBetweenActions());
     	
     	}else if (rand1 < params.getChanceOfIncrementalUpdate()){
-    		record = machine.incrementalUpdate(keysToUse, params.getMillisBetweenActions());
+    		//record = machine.incrementalUpdate(keysToUse, params.getMillisBetweenActions());
     		
     	}
 		return record;
