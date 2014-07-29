@@ -13,6 +13,10 @@ import org.sdb.nosql.db.keys.storage.KeyStore;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
+import com.foundationdb.KeyValue;
+import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
+import com.foundationdb.tuple.Tuple;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -130,31 +134,27 @@ public class KeyGen implements KeyGeneratorIF {
 		return ks;
 	}
 
-	List<String> getFDBKeys(int number) {
-		//TODO - for now, I know the keys in the db - but it would be better
-		// to actually connect to the db and grab a selection
-		if (number > 9999)
-			return null;
+	List<String> getFDBKeys(final int number) {
+
+		return fdbDB.run(new Function<Transaction, List<String>>() {
+	    	
+	    	/** START TRANSACTION *********************/
+		    public List<String> apply(Transaction tr) {
+		    
+	    		List<String> keys = new ArrayList<String>();	
+
+	    		
+	    		for(KeyValue kv: tr.getRange(Tuple.from("value").range(),number)){
+	    			keys.add(Tuple.fromBytes(kv.getKey()).getString(1));
+	    		}
+	
+	    		return keys;
+		   
+		    }
+		    /** END TRANSACTION   *********************/
+	    
+	    });	
 		
-		List<String> ks = new ArrayList<String>();
-		List<String> units = Arrays.asList("0", "1", "2", "3", "4", "5", "6",
-				"7", "8", "9");
-		List<String> keyList = new ArrayList<String>();
-
-		for (String level4 : units)
-			for (String level3 : units)
-				for (String level2 : units)
-					for (String level1 : units)
-						keyList.add(level4 + level3 + level2 + level1);
-
-	     int added = 0;
-		 for (String key: keyList){
-			 added = added+1;
-			 if(added < number)
-				 ks.add(key);
-				 
-		 }
-		return ks;
 	}
 
 	List<String> getFDBRandomKeys(int number) {

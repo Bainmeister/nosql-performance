@@ -78,16 +78,16 @@ public class FoundationDB implements DBMachine{
 		
 	public HashMap<String, String> getKeysFromDB(final int numberOfkeys) {
 		
-	    return db.run(new Function<Transaction, HashMap<String, String>>() {
+	    return db.run(new Function<Transaction, List<String>>() {
 	    	
 	    	/** START TRANSACTION *********************/
-		    public HashMap<String, String> apply(Transaction tr) {
+		    public List<String> apply(Transaction tr) {
 		    
-	    		HashMap<String, String> keys = new HashMap<String, String>();	
+	    		List<String> keys = new ArrayList<String>();	
 
 	    		
 	    		for(KeyValue kv: tr.getRange(Tuple.from("value").range(),numberOfkeys)){
-	    			keys.put(Tuple.fromBytes(kv.getKey()).getString(1),"");
+	    			keys.add(Tuple.fromBytes(kv.getKey()).getString(1));
 	    		}
 	
 	    		return keys;

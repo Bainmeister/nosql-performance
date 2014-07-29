@@ -39,7 +39,7 @@ public interface DBMachine {
 	 * @param numberOfkeys
 	 * @return
 	 */
-	HashMap<String, String> getKeysFromDB(int numberOfkeys);
+	//HashMap<String, String> getKeysFromDB(int numberOfkeys);
 	
 	/**
 	 * Performs (transactionSize) reads against the database that is currently connected.
