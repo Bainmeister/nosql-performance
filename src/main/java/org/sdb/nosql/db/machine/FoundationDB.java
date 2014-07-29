@@ -86,7 +86,7 @@ public class FoundationDB implements DBMachine{
 	    		HashMap<String, String> keys = new HashMap<String, String>();	
 
 	    		
-	    		for(KeyValue kv: tr.getRange(Tuple.from("balance").range(),numberOfkeys)){
+	    		for(KeyValue kv: tr.getRange(Tuple.from("value").range(),numberOfkeys)){
 	    			keys.put(Tuple.fromBytes(kv.getKey()).getString(1),"");
 	    		}
 	
@@ -123,7 +123,7 @@ public class FoundationDB implements DBMachine{
 		    	
 		    	//For every key in the list do a read in this transaction
 		    	for(String key: keys ){
-		    		decodeInt(tr.get(Tuple.from("balance", key).pack()).get());	
+		    		decodeInt(tr.get(Tuple.from("value", key).pack()).get());	
 		    		
 		    		try {
 						Thread.sleep(waitMillis);
@@ -158,7 +158,7 @@ public class FoundationDB implements DBMachine{
 		    	
 		    	//For every key in the list do a read in this transaction
 		    	for(String key: keys ){
-		    		tr.set(Tuple.from("balance", key).pack(), encodeInt(-1));
+		    		tr.set(Tuple.from("value", key).pack(), encodeInt(-1));
 		    		
 		    		waitBetweenActions(waitMillis);
 		    	}
@@ -187,7 +187,7 @@ public class FoundationDB implements DBMachine{
 		    	record.setAttemptsTaken(record.getAttemptsTaken()+1);
 		    	
 		    	for(String key: keys ){
-		    		tr.set(Tuple.from("balance", key).pack(), encodeInt(decodeInt(tr.get(Tuple.from("balance", key).pack()).get()) + 1));
+		    		tr.set(Tuple.from("value", key).pack(), encodeInt(decodeInt(tr.get(Tuple.from("value", key).pack()).get()) + 1));
 		    		waitBetweenActions(waitMillis);
 		    	}
 		    	
@@ -213,9 +213,9 @@ public class FoundationDB implements DBMachine{
 		    	
 		    	int balanceToSet = key1 == key2? 0: 100;
 		    	
-		    	tr.set(Tuple.from("balance", key1).pack(), encodeInt(decodeInt(tr.get(Tuple.from("balance", key1).pack()).get()) -balanceToSet));
+		    	tr.set(Tuple.from("value", key1).pack(), encodeInt(decodeInt(tr.get(Tuple.from("value", key1).pack()).get()) -balanceToSet));
 		    	waitBetweenActions(waitMillis);
-		    	tr.set(Tuple.from("balance", key2).pack(), encodeInt(decodeInt(tr.get(Tuple.from("balance", key2).pack()).get()) + balanceToSet));
+		    	tr.set(Tuple.from("value", key2).pack(), encodeInt(decodeInt(tr.get(Tuple.from("value", key2).pack()).get()) + balanceToSet));
 		    	
 				return record;
 		    }

@@ -49,6 +49,7 @@ import org.sdb.nosql.db.worker.DBTypes;
 import org.sdb.nosql.db.worker.DBWorker;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
+import com.foundationdb.Database;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -56,10 +57,26 @@ import com.mongodb.DBCursor;
 import com.mongodb.MongoClient;
 
 @RunWith(Arquillian.class)
-public class FoundationTest1 {
-
+public class PerformanceTest1 {	
+	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(DBTypes.FOUNDATIONDB, false, 0, 0, 0, 0);
+	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB,  	//DB Type
+																false, 				//Compensatory?
+																10, 				//Thread Count
+																1000, 				//Number of Calls
+																10, 				//Batch Size
+																3					//Contended Records
+															);
+	private void setTestParams(){
+		
+		params.setChanceOfBalanceTransfer(999);
+		params.setChanceOfRead(1);
+		
+		params.setMaxTransactionSize(2);
+		params.setMinTransactionSize(2);
+		params.setMillisBetweenActions(0);
+	}
+	
 	
 	
 	@Deployment
@@ -76,7 +93,9 @@ public class FoundationTest1 {
 								KeyGen.class.getPackage().getName(),
 								KeyStore.class.getPackage().getName(),
 								DBMachine.class.getPackage().getName(),
-								WorkerWorkload.class.getPackage().getName())
+								WorkerWorkload.class.getPackage().getName(),
+								Database.class.getPackage().getName(),
+								InitializeAndCheckMongo.class.getPackage().getName())
 				.addAsManifestResource("services/javax.enterprise.inject.spi.Extension")
 				.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
 				.addAsLibraries(lib);
@@ -102,21 +121,29 @@ public class FoundationTest1 {
 	@Before
 	public void resetAccountData() throws Exception {
 
-		MongoClient mongo = new MongoClient("localhost", 27017);
-		DB database = mongo.getDB("test");
-
-		database.getCollection("counters").drop();
-		DBCollection counters = database.getCollection("counters");		
+		int dbType = params.getDbType(); 
 		
-		for (int i=1; i < params.getContendedRecords()+1; i++) {
-			counters.insert(new BasicDBObject("name", String.valueOf(i)).append("value", 0).append("tx", 0));
+		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
+			InitializeAndCheckFDB.initFDB(params.getContendedRecords());
+		}else {
+			InitializeAndCheckMongo.setupMongo(params.getContendedRecords());
 		}
+			
 	}
 
 
 	
 	@Test
 	public void perf() throws Exception {
+		System.out.println("***************************");
+		System.out.println("PERFORMANCE TEST");
+		System.out.println("Threads:    "+ params.getThreadCount());
+		System.out.println("Batch size: "+ params.getBatchSize());
+		System.out.println("Calls:      "+ params.getNumberOfCalls());
+		//System.out.println("***************************");
+		
+		//Pre-test
+		setTestParams();
 		
 		//1) Connect to the DB and grab some keys
 		List<String> contendedKeys = new KeyGen(new MongoConnection()).getKeys(params.getContendedRecords());
@@ -124,7 +151,6 @@ public class FoundationTest1 {
 		//2) Setup the template worker using the contended keys + other parameters
 		DBWorker<Void> workerTemplate = new DBWorker<Void>(contendedKeys,params);
 
-		System.out.println("Beginning tests");
 		//3) Run the test with a warm up cycle of 100
 		Result<Void> measurement = new Result<Void>(params.getThreadCount(), 
 													params.getNumberOfCalls(), 
@@ -135,33 +161,25 @@ public class FoundationTest1 {
 		System.out.println("***************************");
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
-		System.out.println("time taken:    "  + measurement.getTotalMillis());
-		System.out.println("batch size:    "  + measurement.getBatchSize());
-		System.out.println("thread count:    "  + measurement.getThreadCount());
-		System.out.println("number of calls:    "  + measurement.getNumberOfCalls());
+		System.out.println("Time taken:      "  + measurement.getTotalMillis());
+		System.out.println("Batch size:      "  + measurement.getBatchSize());
+		System.out.println("Thread count:    "  + measurement.getThreadCount());
+		System.out.println("Number of calls: "  + measurement.getNumberOfCalls());
 		System.out.println("***************************");
 	}
 	
 	@After
 	public void accountCheck() throws Exception {
 
-		MongoClient mongo = new MongoClient("localhost", 27017);
-		DB database = mongo.getDB("test");
-		DBCollection counters = database.getCollection("counters");		
-		DBCursor allCounters = counters.find();
-		
 		int i = 0;
+		int dbType = params.getDbType(); 
 		
-		try {
-			while(allCounters.hasNext()) {
-				i = i + (Integer) allCounters.next().get("value");	
-			}
-		} finally {
-			allCounters.close();
+		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
+			i = InitializeAndCheckFDB.checkBalance();
+		}else {
+			i = InitializeAndCheckMongo.checkMongo();
 		}
 		
 		System.out.println("variance= "+ i);
-		
-		
 	}
 }

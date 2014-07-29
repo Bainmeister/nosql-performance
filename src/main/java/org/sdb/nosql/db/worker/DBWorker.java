@@ -66,8 +66,6 @@ public class DBWorker<T> implements Worker<T>{
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
 		this.contendedRecords = contendedRecords;
 		this.params = params;
-		
-
 	}
 			
 	
@@ -122,6 +120,8 @@ public class DBWorker<T> implements Worker<T>{
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
     	List<String> keysToUse = getKeysForTransaction(transactionSize); 
     	
+    	////System.out.println("key1:" keysToUse.get(0));
+    	//System.out.println(keysToUse.get(1));
     	//Get Random number to assign task
     	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
     	if (rand1< params.getChanceOfRead()){
