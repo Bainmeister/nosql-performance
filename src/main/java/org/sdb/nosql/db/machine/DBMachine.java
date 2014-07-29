@@ -75,6 +75,6 @@ public interface DBMachine {
 	
 	ActionRecord logRead(int numberToRead, int waitMillis);
 	
-	void addTable(String name);
+	//void addTable(String name);
 	
 }

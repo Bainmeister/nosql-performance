@@ -22,7 +22,6 @@
 package org.sdb.nosql.db.machine;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +29,6 @@ import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 import com.foundationdb.Database;
-import com.foundationdb.KeyValue;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.Tuple;
@@ -79,10 +77,6 @@ public class FoundationDB implements DBMachine{
 	public ActionRecord insert(List<String> values) {
 		final ActionRecord record = new ActionRecord();
 		return record;
-	}
-
-	public void addTable(String name) {
-		// TODO Auto-generated method stub
 	}
 
 	public ActionRecord read(final List<String> keys, final int waitMillis) {

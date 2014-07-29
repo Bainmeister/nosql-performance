@@ -1,9 +1,7 @@
 package org.sdb.nosql.db.machine;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.types.ObjectId;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 

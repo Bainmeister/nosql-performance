@@ -1,15 +1,12 @@
 package org.sdb.nosql.db.machine;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.types.ObjectId;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 
@@ -18,7 +15,7 @@ public class TokuMXPessimist extends TokuMX{
 	public TokuMXPessimist(MongoConnection connection) {
 		super(connection);
 	}
-
+	
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		ActionRecord record = new ActionRecord();

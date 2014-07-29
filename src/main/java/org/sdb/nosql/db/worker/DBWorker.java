@@ -36,10 +36,9 @@ import io.narayana.perf.Worker;
 import org.sdb.nosql.db.compensation.javax.RunnerService;
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
-import org.sdb.nosql.db.keys.generation.KeyGen;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.machine.FoundationDB;
-import org.sdb.nosql.db.machine.TokuMX;
+import org.sdb.nosql.db.machine.Mongo;
 import org.sdb.nosql.db.machine.TokuMXOptimist;
 import org.sdb.nosql.db.machine.TokuMXPessimist;
 import org.sdb.nosql.db.performance.ActionRecord;
@@ -93,7 +92,7 @@ public class DBWorker<T> implements Worker<T>{
 				machine = new FoundationDB(new FoundationConnection());
 				
 			}else if (params.getDbType() == DBTypes.TOKUMX){
-				machine = new TokuMX(new MongoConnection());
+				machine = new Mongo(new MongoConnection());
 				
 			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_OC)	{
 				machine = new TokuMXOptimist(new MongoConnection());
