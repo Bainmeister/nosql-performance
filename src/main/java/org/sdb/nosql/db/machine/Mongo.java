@@ -126,29 +126,21 @@ public class Mongo implements DBMachine {
 		return record;
 	}
 
-	public ActionRecord logRead(int numberToRead, int waitMillis) {
+	public ActionRecord logRead(int waitMillis) {
 
 		ActionRecord record = new ActionRecord();
 
-		for (int i = 0; i < numberToRead; i++) {
-			DBCollection log = db.getCollection("log" + i);
-			DBCursor cursor = log.find().limit(1000);
+		for (DBCollection col : logCollections){
+			DBCursor cursor = col.find().limit(1000);
 			while (cursor.hasNext()) {
-				// Scan through the log!
 				cursor.next();
 			}
-
-			// Wait for millis
-			if (waitMillis > 0)
-				;
-			waitBetweenActions(waitMillis);
-
 		}
-
+		
 		return record;
 	}
 
-	public ActionRecord logInsert(int logsToWrite, int waitMillis) {
+	public ActionRecord logInsert(int waitMillis) {
 		ActionRecord record = new ActionRecord();
 
 		// Attempts to make a individual identifier - this may not be too accurate if

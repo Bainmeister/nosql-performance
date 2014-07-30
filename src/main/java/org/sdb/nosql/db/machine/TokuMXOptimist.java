@@ -1,22 +1,23 @@
 package org.sdb.nosql.db.machine;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 
-public class TokuMXOptimist extends TokuMX {
+public class TokuMXOptimist extends TokuMX implements DBMachine{
 
 	public TokuMXOptimist(MongoConnection connection) {
 		super(connection);
 	}
 	
-
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		ActionRecord record = new ActionRecord();
@@ -44,6 +45,48 @@ public class TokuMXOptimist extends TokuMX {
 		return record;
 	}
 
+	public ActionRecord insert(int numberToAdd, int waitMillis) {
+		final ActionRecord record = new ActionRecord();
+
+		// Attempts to make a individual name - this may not be too accurate if
+		// there
+		// are loads of writes, but I'm not too bothered about this.
+		String processNum = System.currentTimeMillis() + "_"
+				+ ThreadLocalRandom.current().nextInt(10) + ""
+				+ ThreadLocalRandom.current().nextInt(10);
+		
+		db.requestStart();
+		try{
+			
+			db.requestEnsureConnection();
+			try {
+				//MVCC will grab a snapshot and all the reads should come from the same one.
+				db.command(beginTransaction());
+				
+				boolean updateSucceeded = true;
+				for (int i = 1; i < numberToAdd + 1; i++) {
+					WriteResult write = collection.insert(new BasicDBObject("name", processNum + "_"
+							+ String.valueOf(i)).append("value", 0).append("tx", 0));
+				
+					if (write.getN() == 0)	
+						updateSucceeded =false;
+				}
+
+				//If either write failed, rollback the transaction.
+				db.command(updateSucceeded? commitTransaction() : rollbackTransaction());
+				record.setSuccess(updateSucceeded);
+			} catch (MongoException e){
+				record.setSuccess(false);
+				db.command(rollbackTransaction());
+			}
+			
+		}finally{
+			db.requestDone();
+		}
+		
+		return record;
+	}
+	
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
@@ -142,8 +185,44 @@ public class TokuMXOptimist extends TokuMX {
 	}
 
 	@Override
-	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
+	public ActionRecord logRead(int waitMillis) {
 		ActionRecord record = new ActionRecord();
+	
+		
+		
+		try {
+			db.command(beginTransaction());
+			
+			for (DBCollection col : logCollections){
+				DBCursor cursor = col.find().limit(1000);
+				while (cursor.hasNext()) {
+					cursor.next();
+				}
+			}
+			
+			db.command(rollbackTransaction());
+		}catch (MongoException e){
+			record.setSuccess(false);
+			db.command(rollbackTransaction());
+		}
+		
+		return record;
+	}
+	
+	@Override
+	public ActionRecord logInsert(int waitMillis) {
+		ActionRecord record = new ActionRecord();
+		
+		// Attempts to make a individual identifier - this may not be too accurate if
+		// there
+		// are loads of writes, but I'm not too bothered about this.
+		String processNum = System.currentTimeMillis() + "_"
+				+ ThreadLocalRandom.current().nextInt(10) + ""
+				+ ThreadLocalRandom.current().nextInt(10);
+		
+		
+		for (DBCollection col :logCollections)
+			col.insert(new BasicDBObject("info", processNum));
 		
 		db.requestStart();
 		try{
@@ -152,11 +231,12 @@ public class TokuMXOptimist extends TokuMX {
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction());
+				
 				boolean success =true;
-				for (int i = 0; i<numberToWrite; i++){
-					WriteResult write2 = db.getCollection("log"+i).insert(new BasicDBObject("log", i));
-					waitBetweenActions(waitMillis);
-					if (write2.getN()==0)
+				for (DBCollection col :logCollections){
+					WriteResult write = col.insert(new BasicDBObject("info", processNum));
+					
+					if (write.getN()==0)
 						success = false;
 				}
 				
@@ -170,29 +250,6 @@ public class TokuMXOptimist extends TokuMX {
 		}finally{
 			db.requestDone();
 		}
-		return record;
-	}
-
-	@Override
-	public ActionRecord logRead(int numberToRead, int waitMillis) {
-		ActionRecord record = new ActionRecord();
-				
-		try {
-			db.command(beginTransaction());
-			for (int i = 0; i < numberToRead; i++){
-				
-				DBCollection log = db.getCollection("log"+i);
-				log.find().limit(1000);
-				
-				waitBetweenActions(waitMillis);
-			
-			}
-			db.command(rollbackTransaction());
-		}catch (MongoException e){
-			record.setSuccess(false);
-			db.command(rollbackTransaction());
-		}
-		
 		return record;
 	}
 

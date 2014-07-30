@@ -43,15 +43,6 @@ public interface DBMachine {
 	 * @return the attempts taken to complete the transaction
 	 */
 	ActionRecord read(List<String> keys, int waitMillis);
-		
-	/**
-	 * Performs (transactionSize) updates to the database that is currently connected.
-	 *  
-	 * @param  keyLength The length of a key - "00" = 2, "000" = 3, "0000" = 4
-	 * @param  transActionSize The number of actions within the transaction
-	 * @return the attempts taken to complete the transaction
-	 */
-	ActionRecord update(List<String> keys, int waitMillis);
 	
 	/**
 	 * Insert a number of records to the db
@@ -62,6 +53,15 @@ public interface DBMachine {
 	ActionRecord insert(int numberToAdd, int waitMillis);
 	
 	/**
+	 * Performs (transactionSize) updates to the database that is currently connected.
+	 *  
+	 * @param  keyLength The length of a key - "00" = 2, "000" = 3, "0000" = 4
+	 * @param  transActionSize The number of actions within the transaction
+	 * @return the attempts taken to complete the transaction
+	 */
+	ActionRecord update(List<String> keys, int waitMillis);
+
+	/**
 	 * Perform a balance transfer between two keys 
 	 * @param key1
 	 * @param key2
@@ -71,8 +71,21 @@ public interface DBMachine {
 	 */
 	ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis);
 	
-	ActionRecord logInsert(int numberToWrite, int waitMillis);
+	/**
+	 * Read from the logs
+	 * @param numberToRead
+	 * @param waitMillis
+	 * @return
+	 */
+	ActionRecord logRead(int waitMillis);
 	
-	ActionRecord logRead(int numberToRead, int waitMillis);
+	/**
+	 * Write to the logs
+	 * @param numberToWrite
+	 * @param waitMillis
+	 * @return
+	 */
+	ActionRecord logInsert(int waitMillis);
 	
+
 }

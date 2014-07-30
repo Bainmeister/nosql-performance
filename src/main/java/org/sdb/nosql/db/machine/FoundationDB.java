@@ -204,11 +204,11 @@ public class FoundationDB implements DBMachine{
 		return record;
 	}
 
-	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
+	public ActionRecord logInsert(int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		return record;
 	}
-	public ActionRecord logRead(int numberToRead, int waitMillis) {
+	public ActionRecord logRead(int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		return record;
 	}
