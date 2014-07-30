@@ -14,6 +14,8 @@ import com.mongodb.WriteResult;
 
 public class TokuMXTransactional extends TokuMX {
 
+	private String isolation = "";
+	
 	public TokuMXTransactional(MongoConnection connection) {
 		super(connection);
 	}
@@ -28,7 +30,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction());
+				db.command(beginTransaction(isolation));
 				
 				for (String key : keys)
 					collection.findOne(new BasicDBObject("name",key));
@@ -62,7 +64,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction());
+				db.command(beginTransaction(isolation));
 				
 				boolean updateSucceeded = true;
 				for (int i = 1; i < numberToAdd + 1; i++) {
@@ -98,7 +100,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction());
+				db.command(beginTransaction(isolation));
 				boolean updateSucceeded = true;
 				for (String key : keys){
 					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",2000));
@@ -157,7 +159,7 @@ public class TokuMXTransactional extends TokuMX {
 			//***** TRANSACTION****//
 			try{
 				
-				db.command(beginTransaction());
+				db.command(beginTransaction(isolation));
 	
 				WriteResult write1 = collection.update(query1, set1);  	//Update record 1
 				waitBetweenActions(waitMillis);							//Delay
@@ -192,7 +194,7 @@ public class TokuMXTransactional extends TokuMX {
 		
 		
 		try {
-			db.command(beginTransaction());
+			db.command(beginTransaction(isolation));
 			
 			for (DBCollection col : logCollections){
 				DBCursor cursor = col.find().limit(1000);
@@ -231,7 +233,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				
-				db.command(beginTransaction());
+				db.command(beginTransaction(isolation));
 				
 				boolean success =true;
 				for (DBCollection col :logCollections){
@@ -253,12 +255,15 @@ public class TokuMXTransactional extends TokuMX {
 		}
 		return record;
 	}
-
-	BasicDBObject beginTransaction(){
+	
+	BasicDBObject beginTransaction(String isolation){
 		
 		//Create beginTransaction object - standard default transaction (MVCC)
 		BasicDBObject beginTransaction = new BasicDBObject();
 		beginTransaction.append("beginTransaction", 1);
+		if (isolation== "serializable" || isolation=="MVCC")
+			beginTransaction.append("isolation", isolation);
+		
 		return beginTransaction;
 	}
 
@@ -274,6 +279,14 @@ public class TokuMXTransactional extends TokuMX {
 		BasicDBObject commitTransaction = new BasicDBObject();
 		commitTransaction.append("commitTransaction", 1);
 		return commitTransaction;
+	}
+
+	public String getIsolation() {
+		return isolation;
+	}
+
+	public void setIsolation(String isolation) {
+		this.isolation = isolation;
 	}
 	
 }

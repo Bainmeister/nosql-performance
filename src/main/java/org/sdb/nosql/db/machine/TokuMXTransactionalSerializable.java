@@ -61,9 +61,9 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 	public ActionRecord balanceTransfer(String key1, String key2, int amount,
 			int waitMillis) {
 		final ActionRecord record = new ActionRecord();
-
+		
 		boolean updateSucceeded = false;
-
+		record.setSuccess(false);
 		if ((key1 == null || key1 == "") || (key2 == null || key2 == "")) {
 			System.out.println("2 are keys required for balance transfer");
 		}
@@ -78,19 +78,22 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 		// Query to Decrement balance 1
 		BasicDBObject set1 = new BasicDBObject();
 		set1.append("$inc", new BasicDBObject().append("value", -amount));
-
+		set1.append("$inc", new BasicDBObject().append("tx", 1));
+		
 		// Query to Increment balance 2
 		BasicDBObject set2 = new BasicDBObject();
 		set2.append("$inc", new BasicDBObject().append("value", amount));
-
+		set2.append("$inc", new BasicDBObject().append("tx", 1));
+		
 		db.requestStart();
 		try {
 			db.requestEnsureConnection();
 			// ***** TRANSACTION****//
 			try {
-
+				
 				db.command(beginTransaction());
-
+				// Lock the records
+				
 				// Lock the records by reading them.
 				// IMPORTANT: The gap between here an the query allows other
 				// updates to potentially change the records.
@@ -98,29 +101,27 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 				// only getting records if it hasn't been updated
 				// The lack of ability to check last update really makes this
 				// feel un-transactional.
-				collection.findOne(query1).get("value");
-				collection.findOne(query2).get("value");
+				collection.findOne(new BasicDBObject("name", key1));
+				collection.findOne(new BasicDBObject("name", key2));
 				// To truely ensure we have the best view of the data we should
 				// do a snapshot.
 
 				// Write to the records
 				WriteResult write1 = collection.update(query1, set1); // Update
-																		// record
-																		// 1
+																		
 				waitBetweenActions(waitMillis); // Delay
-				WriteResult write2 = collection.update(query2, set2); // Update
-																		// record
-																		// 2
-				waitBetweenActions(waitMillis); // Delay
-
-				updateSucceeded = (write1.getN() == 0) || (write2.getN() == 0) ? false
+				
+				WriteResult write2 = collection.update(query2, set2); // Update															
+				
+				updateSucceeded = (write1 ==null || write2 == null || write1.getN() == 0) || (write2.getN() == 0) ? false
 						: true;
 
 				// If either write failed, rollback the transaction.
 				db.command(updateSucceeded ? commitTransaction()
 						: rollbackTransaction());
-
+				
 			} catch (MongoException e) {
+
 				record.setSuccess(false);// most likely a lock failure!
 				db.command(rollbackTransaction());
 			}
@@ -128,6 +129,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 
 			record.setSuccess(updateSucceeded);
 		} finally {
+			// is this catching us out?	
 			db.requestDone();
 		}
 		return record;
@@ -135,13 +137,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 
 	//Explicitly issue a serializable transaction
 	BasicDBObject beginTransaction() {
-
-		// Create beginTransaction object
-		BasicDBObject beginTransaction = new BasicDBObject();
-		beginTransaction.append("beginTransaction", 1);
-		beginTransaction.append("isolation", "serializable");
-
-		return beginTransaction;
+		return beginTransaction("serializable");
 	}
 
 }

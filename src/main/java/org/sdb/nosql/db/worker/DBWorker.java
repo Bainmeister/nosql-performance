@@ -39,6 +39,8 @@ import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.machine.FoundationDB;
 import org.sdb.nosql.db.machine.Mongo;
+import org.sdb.nosql.db.machine.TokuMX;
+import org.sdb.nosql.db.machine.TokuMXTransactional;
 import org.sdb.nosql.db.machine.TokuMXTransactionalMVCC;
 import org.sdb.nosql.db.machine.TokuMXTransactionalSerializable;
 import org.sdb.nosql.db.performance.ActionRecord;
@@ -49,7 +51,6 @@ import org.sdb.nosql.db.performance.ActionRecord;
  * A Worker that interacts with DBMachine to manipulate Databases. 
  * @param <T>
  */
-//@WebService(serviceName = "HotelServiceService", portName = "HotelService", name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
 public class DBWorker<T> implements Worker<T>{
 
 	private long workTimeMillis;
@@ -61,7 +62,7 @@ public class DBWorker<T> implements Worker<T>{
 	
 	DBMachine machine;
 	
-	//Construct
+	//Construct using a list of contended records and the parameters for running the test. 
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
 		this.contendedRecords = contendedRecords;
 		this.params = params;
@@ -72,44 +73,55 @@ public class DBWorker<T> implements Worker<T>{
 	public T doWork(T context, int batchSize, Result<T> measurement) {
 		
 		long timetaken = 0;
+		ActionRecord record = null;
 		
-		//Call the doWork 
+		//Call the doWork of the RunnerService and bug out!
 		if (params.isCompensator()){
 			
 			//TODO add and actionRecord to pass back rather than workTimeMillis
 	        RunnerService runnerService = createWebServiceClient();
 	        workTimeMillis = runnerService.doWork(params);
 	        workTimeMillis  = timetaken;
+	        
+	        //GET OUT! No need to do any other work!
 	        return null;
 		}
 		
-		//now connect to the required db and setup relevant database machine.
-		//Call the doWork 
-		if (!params.isCompensator()){
-				
-			//Set up the relevant Database Machine with a connection to the DB
-			if (params.getDbType() == DBTypes.FOUNDATIONDB){
-				machine = new FoundationDB(new FoundationConnection());
-				
-			}else if (params.getDbType() == DBTypes.TOKUMX){
-				machine = new Mongo(new MongoConnection());
-				
-			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_OC)	{
-				machine = new TokuMXTransactionalMVCC(new MongoConnection());
-				
-			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_PC)	{
-				machine = new TokuMXTransactionalSerializable(new MongoConnection());
-			}
-				
+			
+		//Set up the relevant DBMaching to store connection and do work.	
+		if (params.getDbType() == DBTypes.FOUNDATIONDB){
+			machine = new FoundationDB(new FoundationConnection());
+		
+		}else if (params.getDbType() == DBTypes.MONGODB){
+			machine = new Mongo(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX){
+			machine = new TokuMX(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS){
+			machine = new TokuMXTransactional(new MongoConnection());	
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_MVCC)	{
+			machine = new TokuMXTransactionalMVCC(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_SERIALIABLE)	{
+			machine = new TokuMXTransactionalSerializable(new MongoConnection());
 		}
 		
-		//Carry out a batch of work
+		//ensure there  are no recorded errors!
+		//measurement.setErrorCount(0);
+		init();
 		for (int i = 0 ; i < batchSize;i++){
-			ActionRecord record = workload();
+			record = workload();
 		}
+		fini();
 		
-		//System.out.println("time taken: " + timetaken);
-		workTimeMillis = System.currentTimeMillis();
+    	//Check for success
+    	if ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )
+    		measurement.incrementErrorCount();
+    	
+    	workTimeMillis = getFiniTimeMillis() - getInitTimeMillis();
+    		
 		return null;
 	}
 	
@@ -121,15 +133,24 @@ public class DBWorker<T> implements Worker<T>{
     	
     	//Get Random number to assign task
     	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
+    	
     	if (rand1< params.getChanceOfRead()){
-    		//Reader
     		record = machine.read(keysToUse,params.getMillisBetweenActions());
     		
-    	}else if(rand1 < params.getChanceOfWrite()){
-    		//Writer
-    		record = machine.update(keysToUse, params.getMillisBetweenActions());
+    	}else if(rand1 < params.getChanceOfInsert()){
+        		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
+    
+    	}else if(rand1 < params.getChanceOfUpdate()){
+    		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
+    	      	
     	}else if (rand1 < params.getChanceOfBalanceTransfer()){
     		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
+    	
+    	}else if (rand1 < params.getChanceOfLogRead()){
+    		record = machine.logRead(params.getMillisBetweenActions());
+    		
+    	}else if (rand1 < params.getChanceOfLogInsert()){
+    		record = machine.logInsert( params.getMillisBetweenActions());
     	}
 		return record;
 	}
@@ -194,7 +215,7 @@ public class DBWorker<T> implements Worker<T>{
 	/**
 	 * @return the initTimemillis
 	 */
-	public long getInitTimemillis() {
+	public long getInitTimeMillis() {
 		return initTimemillis;
 	}
 

@@ -38,17 +38,18 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 public class PerformanceTest2_NOWAR {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB,  	//DB Type
+	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX_TRANS_SERIALIABLE,  	//DB Type
 																false, 				//Compensatory?
 																10, 				//Thread Count
-																100, 				//Number of Calls
+																1000, 				//Number of Calls
 																10, 				//Batch Size
-																3					//Contended Records
+																2					//Contended Records
 															);
 	private void setTestParams(){
 		
-		params.setChanceOfBalanceTransfer(999);
-		params.setChanceOfRead(1);
+		params.setChanceOfBalanceTransfer(1000);
+		params.setChanceOfRead(0);
+		params.setChanceOfUpdate(0);
 		
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
@@ -88,6 +89,7 @@ public class PerformanceTest2_NOWAR {
 		//Pre-test
 		setTestParams();
 		List<String> contendedKeys = null;
+		
 		//1) Connect to the DB and grab some keys
 		int dbType = params.getDbType();
 		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
@@ -114,6 +116,7 @@ public class PerformanceTest2_NOWAR {
 		System.out.println("Batch size:      "  + measurement.getBatchSize());
 		System.out.println("Thread count:    "  + measurement.getThreadCount());
 		System.out.println("Number of calls: "  + measurement.getNumberOfCalls());
+		System.out.println("Number of Failures: "  + measurement.getErrorCount());
 		System.out.println("***************************");
 	}
 	

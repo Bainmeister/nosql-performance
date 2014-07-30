@@ -13,10 +13,11 @@ public class WorkerParameters {
 	
 	//It is possible that we may want to change these params during a test - not sure why yet.
 	private int chanceOfRead = 0;
-	private int chanceOfWrite = 0;
+	private int chanceOfInsert = 0;
+	private int chanceOfUpdate = 0;
 	private int chanceOfBalanceTransfer = 0;
-	private int chanceOfReadModifyWrite = 0;
-	private int chanceOfIncrementalUpdate = 0; 
+	private int chanceOfLogRead= 0;
+	private int chanceOfLogInsert = 0; 
 
 	private int minTransactionSize = 0;
 	private int maxTransactionSize = 0; 
@@ -53,20 +54,6 @@ public class WorkerParameters {
 	}
 
 	/**
-	 * @return the chanceOfWrite
-	 */
-	public int getChanceOfWrite() {
-		return chanceOfWrite;
-	}
-
-	/**
-	 * @param chanceOfWrite the chanceOfWrite to set
-	 */
-	public void setChanceOfWrite(int chanceOfWrite) {
-		this.chanceOfWrite = chanceOfWrite;
-	}
-
-	/**
 	 * @return the chanceOfBalanceTransfer
 	 */
 	public int getChanceOfBalanceTransfer() {
@@ -78,34 +65,6 @@ public class WorkerParameters {
 	 */
 	public void setChanceOfBalanceTransfer(int chanceOfBalanceTransfer) {
 		this.chanceOfBalanceTransfer = chanceOfBalanceTransfer;
-	}
-
-	/**
-	 * @return the chanceOfReadModifyWrite
-	 */
-	public int getChanceOfReadModifyWrite() {
-		return chanceOfReadModifyWrite;
-	}
-
-	/**
-	 * @param chanceOfReadModifyWrite the chanceOfReadModifyWrite to set
-	 */
-	public void setChanceOfReadModifyWrite(int chanceOfReadModifyWrite) {
-		this.chanceOfReadModifyWrite = chanceOfReadModifyWrite;
-	}
-
-	/**
-	 * @return the chanceOfIncrementalUpdate
-	 */
-	public int getChanceOfIncrementalUpdate() {
-		return chanceOfIncrementalUpdate;
-	}
-
-	/**
-	 * @param chanceOfIncrementalUpdate the chanceOfIncrementalUpdate to set
-	 */
-	public void setChanceOfIncrementalUpdate(int chanceOfIncrementalUpdate) {
-		this.chanceOfIncrementalUpdate = chanceOfIncrementalUpdate;
 	}
 
 	/**
@@ -205,6 +164,46 @@ public class WorkerParameters {
 
 	public boolean isCompensator() {
 		return isCompensator;
+	}
+
+
+	public int getChanceOfInsert() {
+		return chanceOfInsert;
+	}
+
+
+	public void setChanceOfInsert(int chanceOfInsert) {
+		this.chanceOfInsert = chanceOfInsert;
+	}
+
+
+	public int getChanceOfUpdate() {
+		return chanceOfUpdate;
+	}
+
+
+	public void setChanceOfUpdate(int chanceOfUpdate) {
+		this.chanceOfUpdate = chanceOfUpdate;
+	}
+
+
+	public int getChanceOfLogRead() {
+		return chanceOfLogRead;
+	}
+
+
+	public void setChanceOfLogRead(int chanceOfLogRead) {
+		this.chanceOfLogRead = chanceOfLogRead;
+	}
+
+
+	public int getChanceOfLogInsert() {
+		return chanceOfLogInsert;
+	}
+
+
+	public void setChanceOfLogInsert(int chanceOfLogInsert) {
+		this.chanceOfLogInsert = chanceOfLogInsert;
 	}
 
 	

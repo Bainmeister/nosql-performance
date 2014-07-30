@@ -158,10 +158,14 @@ public class Mongo implements DBMachine {
 	}
 
 	public void waitBetweenActions(int millis) {
-		try {
-			TimeUnit.MILLISECONDS.sleep(millis);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		
+		if (ThreadLocalRandom.current().nextInt(2)==1 ){
+			try {
+				TimeUnit.MILLISECONDS.sleep(millis);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
+	
 	}
 }
