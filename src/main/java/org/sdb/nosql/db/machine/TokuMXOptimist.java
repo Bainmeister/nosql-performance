@@ -28,8 +28,10 @@ public class TokuMXOptimist extends TokuMX {
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction());
+				
 				for (String key : keys)
-					collection.find(new BasicDBObject("name",key));
+					collection.findOne(new BasicDBObject("name",key));
+				
 				db.command(rollbackTransaction());
 				
 			} catch (MongoException e){
