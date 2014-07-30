@@ -42,7 +42,7 @@ import com.foundationdb.tuple.Tuple;
  */
 public class FoundationDB implements DBMachine {
 
-	private Database db;
+	Database db;
 
 	public FoundationDB(FoundationConnection connection) {
 		db = connection.getDb();
@@ -55,11 +55,9 @@ public class FoundationDB implements DBMachine {
 
 	public ActionRecord read(final List<String> keys, final int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
-
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
-
+			ActionRecord record = new ActionRecord();
 			// * START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 
@@ -87,7 +85,6 @@ public class FoundationDB implements DBMachine {
 	}
 
 	public ActionRecord insert(final int number, final int waitMillis) {
-		final ActionRecord record = new ActionRecord();
 
 		// Attempts to make a individual name - this may not be too accurate if
 		// there are loads of writes, but I'm not too bothered about this.
@@ -97,7 +94,7 @@ public class FoundationDB implements DBMachine {
 
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
-
+			ActionRecord record = new ActionRecord();
 			// * START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 
@@ -120,11 +117,11 @@ public class FoundationDB implements DBMachine {
 
 	public ActionRecord update(final List<String> keys, final int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
-
 		// Use the DB API to update a single line.
 		return db.run(new Function<Transaction, ActionRecord>() {
-
+			
+			ActionRecord record = new ActionRecord();
+			
 			// START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 
@@ -142,16 +139,15 @@ public class FoundationDB implements DBMachine {
 			// END TRANSACTION *********************/
 
 		});
+	
 	}
 
 	public ActionRecord balanceTransfer(final String key1, final String key2,
 			final int amount, final int waitMillis) {
 
-		ActionRecord record = new ActionRecord();
+		return db.run(new Function<Transaction, ActionRecord>() {
 
-		record = db.run(new Function<Transaction, ActionRecord>() {
-
-		final ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord();
 
 			// START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
@@ -175,8 +171,6 @@ public class FoundationDB implements DBMachine {
 			// END TRANSACTION *********************/
 
 		});
-
-		return record;
 
 	}
 
@@ -202,9 +196,39 @@ public class FoundationDB implements DBMachine {
 		});
 	}
 
-	public ActionRecord logInsert(int waitMillis) {
-		final ActionRecord record = new ActionRecord();
-		return record;
+	public ActionRecord logInsert(final int waitMillis) {
+
+		// Attempts to make a individual name - this may not be too accurate if
+		// there are loads of writes, but I'm not too bothered about this.
+		final String processNum = System.currentTimeMillis() + "_"
+				+ ThreadLocalRandom.current().nextInt(10) + ""
+				+ ThreadLocalRandom.current().nextInt(10);
+
+		// FDB API
+		return db.run(new Function<Transaction, ActionRecord>() {
+			ActionRecord record = new ActionRecord();
+			// * START TRANSACTION *********************/
+			public ActionRecord apply(Transaction tr) {
+
+				record.setAttemptsTaken(record.getAttemptsTaken() + 1);
+
+				tr.set(Tuple.from("log1", processNum).pack(),
+						encodeInt(0));
+				waitBetweenActions(waitMillis);
+
+				tr.set(Tuple.from("log2", processNum).pack(),
+						encodeInt(0));
+				waitBetweenActions(waitMillis);
+
+				tr.set(Tuple.from("log3", processNum).pack(),
+						encodeInt(0));
+				waitBetweenActions(waitMillis);
+
+				return record;
+			}
+			// END TRANSACTION *********************/
+
+		});
 	}
 
 	/**

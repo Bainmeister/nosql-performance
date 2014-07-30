@@ -21,7 +21,6 @@
  */
 package org.sdb.nosql.db.machine;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.sdb.nosql.db.performance.ActionRecord;
