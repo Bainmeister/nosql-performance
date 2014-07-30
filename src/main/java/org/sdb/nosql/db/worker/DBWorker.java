@@ -39,8 +39,8 @@ import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.machine.FoundationDB;
 import org.sdb.nosql.db.machine.Mongo;
-import org.sdb.nosql.db.machine.TokuMXOptimist;
-import org.sdb.nosql.db.machine.TokuMXPessimist;
+import org.sdb.nosql.db.machine.TokuMXTransactionalMVCC;
+import org.sdb.nosql.db.machine.TokuMXTransactionalSerializable;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 /**
@@ -95,10 +95,10 @@ public class DBWorker<T> implements Worker<T>{
 				machine = new Mongo(new MongoConnection());
 				
 			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_OC)	{
-				machine = new TokuMXOptimist(new MongoConnection());
+				machine = new TokuMXTransactionalMVCC(new MongoConnection());
 				
 			}else if (params.getDbType() == DBTypes.TOKUMX_ACID_PC)	{
-				machine = new TokuMXPessimist(new MongoConnection());
+				machine = new TokuMXTransactionalSerializable(new MongoConnection());
 			}
 				
 		}

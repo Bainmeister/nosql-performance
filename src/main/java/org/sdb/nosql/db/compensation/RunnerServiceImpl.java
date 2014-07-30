@@ -88,11 +88,6 @@ public class RunnerServiceImpl implements RunnerService, DBMachine {
 		return null;
 	}
 
-	@Override
-	public ActionRecord insert(List<String> values, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
@@ -101,13 +96,19 @@ public class RunnerServiceImpl implements RunnerService, DBMachine {
 	}
 
 	@Override
-	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
+	public ActionRecord logInsert(int waitMillis) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public ActionRecord logRead(int numberToRead, int waitMillis) {
+	public ActionRecord logRead(int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord insert(int numberToAdd, int waitMillis) {
 		// TODO Auto-generated method stub
 		return null;
 	}
