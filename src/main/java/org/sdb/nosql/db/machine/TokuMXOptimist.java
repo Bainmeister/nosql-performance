@@ -27,7 +27,7 @@ public class TokuMXOptimist extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction("mvcc"));
+				db.command(beginTransaction());
 				for (String key : keys)
 					collection.find(new BasicDBObject("name",key));
 				db.command(rollbackTransaction());
@@ -52,7 +52,7 @@ public class TokuMXOptimist extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction("mvcc"));
+				db.command(beginTransaction());
 				boolean updateSucceeded = true;
 				for (String key : keys){
 					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",2000));
@@ -75,7 +75,7 @@ public class TokuMXOptimist extends TokuMX {
 	}
 
 	@Override
-	public ActionRecord balanceTransfer(String key1, String key2, int waitMillis) {
+	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		
 		boolean updateSucceeded = false;
@@ -111,7 +111,7 @@ public class TokuMXOptimist extends TokuMX {
 			//***** TRANSACTION****//
 			try{
 				
-				db.command(beginTransaction("mvcc"));
+				db.command(beginTransaction());
 	
 				WriteResult write1 = collection.update(query1, set1);  	//Update record 1
 				waitBetweenActions(waitMillis);							//Delay
@@ -149,7 +149,7 @@ public class TokuMXOptimist extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction("mvcc"));
+				db.command(beginTransaction());
 				boolean success =true;
 				for (int i = 0; i<numberToWrite; i++){
 					WriteResult write2 = db.getCollection("log"+i).insert(new BasicDBObject("log", i));
@@ -176,7 +176,7 @@ public class TokuMXOptimist extends TokuMX {
 		ActionRecord record = new ActionRecord();
 				
 		try {
-			db.command(beginTransaction("mvcc"));
+			db.command(beginTransaction());
 			for (int i = 0; i < numberToRead; i++){
 				
 				DBCollection log = db.getCollection("log"+i);
@@ -194,4 +194,28 @@ public class TokuMXOptimist extends TokuMX {
 		return record;
 	}
 
+	BasicDBObject beginTransaction(){
+		
+		//Create beginTransaction object
+		BasicDBObject beginTransaction = new BasicDBObject();
+		beginTransaction.append("beginTransaction", 1);
+		beginTransaction.append("isolation", "MVCC");
+		
+		return beginTransaction;
+	}
+
+	BasicDBObject rollbackTransaction(){
+		//Create rollbackTransaction object
+		BasicDBObject rollbackTransaction = new BasicDBObject();
+		rollbackTransaction.append("rollbackTransaction", 1);
+		return rollbackTransaction;
+	}
+	
+	BasicDBObject commitTransaction(){
+		//Create rollbackTransaction object
+		BasicDBObject commitTransaction = new BasicDBObject();
+		commitTransaction.append("commitTransaction", 1);
+		return commitTransaction;
+	}
+	
 }

@@ -1,11 +1,10 @@
 package org.sdb.nosql.db.connection;
 
 import java.net.UnknownHostException;
-
+import java.util.List;
 
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
-
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
@@ -52,6 +51,11 @@ public class MongoConnection implements DBConnection {
 
 	public DBCollection getCollection() {
 		return collection;
+	}
+
+	public List<DBCollection> getLogCollections() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

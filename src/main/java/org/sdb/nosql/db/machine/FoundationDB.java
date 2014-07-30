@@ -142,7 +142,7 @@ public class FoundationDB implements DBMachine{
 	    });	
 	}
 
-	public ActionRecord insert(List<String> values, int waitMillis) {
+	public ActionRecord insert(int number, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		return record;
 	}
@@ -170,7 +170,7 @@ public class FoundationDB implements DBMachine{
 	    });	
 	}
 
-	public ActionRecord balanceTransfer(final String key1, final String key2, final int waitMillis) {
+	public ActionRecord balanceTransfer(final String key1, final String key2, int amount, final int waitMillis) {
 		
 		ActionRecord record = new ActionRecord();
 		

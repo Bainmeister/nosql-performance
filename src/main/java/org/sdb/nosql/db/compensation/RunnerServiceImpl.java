@@ -4,6 +4,8 @@ import org.jboss.narayana.compensations.api.TransactionCompensatedException;
 import org.sdb.nosql.db.compensation.javax.RunnerService;
 import org.sdb.nosql.db.connection.DBConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
+import org.sdb.nosql.db.machine.DBMachine;
+import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.mongodb.DBCollection;
@@ -21,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author paul.robinson@redhat.com 10/07/2014
  */
 @WebService(serviceName = "HotelServiceService", portName = "HotelService", name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
-public class RunnerServiceImpl implements RunnerService {
+public class RunnerServiceImpl implements RunnerService, DBMachine {
 
 
     private Random rand = new Random(System.currentTimeMillis());
@@ -72,6 +74,42 @@ public class RunnerServiceImpl implements RunnerService {
 	public long doWork(WorkerParameters params) {
 		// This method does what doWork does for a standard DB interaction.
 		return 0;
+	}
+
+	@Override
+	public ActionRecord read(List<String> keys, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord update(List<String> keys, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord insert(List<String> values, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ActionRecord logRead(int numberToRead, int waitMillis) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

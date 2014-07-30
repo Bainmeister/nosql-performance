@@ -1,6 +1,7 @@
 package org.sdb.nosql.db.machine;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.sdb.nosql.db.connection.MongoConnection;
@@ -18,12 +19,15 @@ public class Mongo implements DBMachine {
 
 	DB db;
 	DBCollection collection;
+	List<DBCollection> logCollections;
 	
 	public Mongo(MongoConnection connection){
 		db = connection.getDb();
 		collection = connection.getCollection();
+		logCollections = connection.getLogCollections();
 	}
-
+	
+	//Don't allow creation without a connection
 	@SuppressWarnings("unused")
 	private Mongo(){
 		
@@ -31,7 +35,6 @@ public class Mongo implements DBMachine {
 	
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
-	
 		
 		for (String key : keys){
 			BasicDBObject searchQuery = new BasicDBObject("name",key);
@@ -55,13 +58,27 @@ public class Mongo implements DBMachine {
 		return record;
 	}
 
+	public ActionRecord insert(int numberToAdd, int waitMillis) {
+		final ActionRecord record = new ActionRecord();
+		
+		//Attempts to make a individual name - this may not be too accurate if there 
+		// are loads of writes, but I'm not too bothered about this. 
+		String processNum =  System.currentTimeMillis() +"_"+
+								ThreadLocalRandom.current().nextInt(10) + "" +
+								ThreadLocalRandom.current().nextInt(10);
+	
+		for (int i=1; i < numberToAdd+1; i++) {
+			collection.insert(new BasicDBObject("name", processNum + "_"+String.valueOf(i)).append("value", 0).append("tx", 0));
+		}
+		
+		return record;
+	}
+	
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		
 		for (String key : keys){
-			//ObjectId keyObj = new ObjectId(key);
-			
-			
+
 			BasicDBObject newDocument = new BasicDBObject();
 			newDocument.append("$set", new BasicDBObject().append("balance", 200));
 			BasicDBObject searchQuery = new BasicDBObject().append("name",key);
@@ -76,64 +93,8 @@ public class Mongo implements DBMachine {
 		
 		return record;
 	}
-
-	public ActionRecord insert(List<String> values, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
-	public ActionRecord readModifyWrite(List<String> keys, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
-		
-		for (String key : keys){
-			
-			BasicDBObject newDocument = new BasicDBObject().append("$inc", new BasicDBObject().append("increment", 1));
-	 
-			collection.update(new BasicDBObject().append("name", key), newDocument);
-			
-			//Wait for millis
-			if (waitMillis > 0);
-				waitBetweenActions(waitMillis);
-		}
-		return record;
-	}
-	
-	public ActionRecord incrementalUpdate(List<String> keys, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
-		
-
-		for (String key :keys){
-			//Create usable keys
-			//ObjectId keyObj1 = new ObjectId(key);
-			
-			//Setup a search query
-			BasicDBObject searchQuery1 = new BasicDBObject("name",key);
-			
-			//Set the element to return
-			BasicDBObject fields = new BasicDBObject();
-			fields.put("increment", 1);
-			
-			//Get the current value from the db
-			DBObject doc1 = collection.findOne(searchQuery1, fields);
-			int doc1Mod = (Integer) doc1.get("increment");
-			
-			//Wait for millis
-			if (waitMillis > 0);
-				waitBetweenActions(waitMillis);
-			
-			//Add 1 to the value
-			BasicDBObject newDocument = new BasicDBObject();
-			newDocument.append("$set", new BasicDBObject().append("increment", doc1Mod +1));
-			BasicDBObject searchQuery = new BasicDBObject().append("name",key);
-			collection.update(searchQuery, newDocument);	
-		}
-		
-			
-		
-		return record;
-	}
-
-	public ActionRecord balanceTransfer(String key1, String key2, int waitMillis) {
+	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		
 		boolean updateSucceeded = true;
@@ -142,12 +103,8 @@ public class Mongo implements DBMachine {
 			System.out.println("2 are keys required for balance transfer");
 		}
 		
-		//Amount to transfer
-		int transAmount = key1==key2 ? 0:100;
-		
-		//Create usable keys from key Strings
-		//ObjectId keyObj1 = new ObjectId(key1);
-		//ObjectId keyObj2 = new ObjectId(key2);
+		//Amount to transfer - if the keys are the same don't transfer a thing.
+		amount = key1==key2 ? 0:amount;
 		
 		//Setup search querys
 		BasicDBObject query1 = new BasicDBObject("name",key1);
@@ -155,11 +112,11 @@ public class Mongo implements DBMachine {
 		
 		//Query to Decrement balance 1
 		BasicDBObject set1 = new BasicDBObject();
-		set1.append("$inc", new BasicDBObject().append("value", -transAmount));
+		set1.append("$inc", new BasicDBObject().append("value", -amount));
 	
 		//Query to Increment balance 2
 		BasicDBObject set2 = new BasicDBObject();
-		set2.append("$inc", new BasicDBObject().append("value", transAmount));
+		set2.append("$inc", new BasicDBObject().append("value", amount));
 		
 		try{
 			
@@ -180,22 +137,7 @@ public class Mongo implements DBMachine {
 		return record;
 	}
 
-	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
-		ActionRecord record = new ActionRecord();
-		
-		for (int i = 0; i<numberToWrite; i++){
-			DBCollection log = db.getCollection("log"+i);
-			log.insert(new BasicDBObject("log", i));
-			
-			//Wait for millis
-			if (waitMillis > 0);
-				waitBetweenActions(waitMillis);
-		}
-		
-		return record;
-	}
-
-	public ActionRecord logRead(int numberToRead , int waitMillis) {
+public ActionRecord logRead(int numberToRead , int waitMillis) {
 		
 		ActionRecord record = new ActionRecord();
 		
@@ -224,31 +166,20 @@ public class Mongo implements DBMachine {
 		}	
 	}
 	
-	
-	BasicDBObject beginTransaction(String isolation){
+	public ActionRecord logInsert(int numberToWrite, int waitMillis) {
+		ActionRecord record = new ActionRecord();
 		
-		//Create beginTransaction object
-		BasicDBObject beginTransaction = new BasicDBObject();
-		beginTransaction.append("beginTransaction", 1);
+		for (int i = 0; i<numberToWrite; i++){
+			DBCollection log = db.getCollection("log"+i);
+			log.insert(new BasicDBObject("log", i));
+			
+			//Wait for millis
+			if (waitMillis > 0);
+				waitBetweenActions(waitMillis);
+		}
 		
-		if (isolation == "MVCC" || isolation == "serializable")
-			beginTransaction.append("isolation", isolation);
-		
-		return beginTransaction;
+		return record;
 	}
 
-	BasicDBObject rollbackTransaction(){
-		//Create rollbackTransaction object
-		BasicDBObject rollbackTransaction = new BasicDBObject();
-		rollbackTransaction.append("rollbackTransaction", 1);
-		return rollbackTransaction;
-	}
-	
-	BasicDBObject commitTransaction(){
-		//Create rollbackTransaction object
-		BasicDBObject commitTransaction = new BasicDBObject();
-		commitTransaction.append("commitTransaction", 1);
-		return commitTransaction;
-	}
 	
 }

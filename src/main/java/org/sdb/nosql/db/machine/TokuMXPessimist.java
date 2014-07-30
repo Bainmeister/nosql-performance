@@ -10,7 +10,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 
-public class TokuMXPessimist extends TokuMX{
+public class TokuMXPessimist extends TokuMX {
 
 	public TokuMXPessimist(MongoConnection connection) {
 		super(connection);
@@ -26,7 +26,7 @@ public class TokuMXPessimist extends TokuMX{
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction("serializable"));
+				db.command(beginTransaction());
 				for (String key : keys)
 					collection.find(new BasicDBObject("name",key));
 				db.command(rollbackTransaction());
@@ -51,7 +51,7 @@ public class TokuMXPessimist extends TokuMX{
 			db.requestEnsureConnection();
 			try {
 				
-				db.command(beginTransaction("serializable"));
+				db.command(beginTransaction());
 				
 				//Lock the records
 				for (String key : keys)
@@ -80,7 +80,7 @@ public class TokuMXPessimist extends TokuMX{
 	}
 
 	@Override
-	public ActionRecord balanceTransfer(String key1, String key2, int waitMillis) {
+	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 			
 		boolean updateSucceeded = false;
@@ -111,7 +111,7 @@ public class TokuMXPessimist extends TokuMX{
 			try{
 				
 				
-				db.command(beginTransaction("serializable"));
+				db.command(beginTransaction());
 				
 				//Lock the records by reading them. 
 				//IMPORTANT: The gap between here an the query allows other updates to potentially change the records.
@@ -155,7 +155,7 @@ public class TokuMXPessimist extends TokuMX{
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction("serializable"));
+				db.command(beginTransaction());
 				boolean success =true;
 				for (int i = 0; i<numberToWrite; i++){
 					WriteResult write2 = db.getCollection("log"+i).insert(new BasicDBObject("log", i));
@@ -182,7 +182,7 @@ public class TokuMXPessimist extends TokuMX{
 		ActionRecord record = new ActionRecord();
 		
 		try {
-			db.command(beginTransaction("serializable"));
+			db.command(beginTransaction());
 			for (int i = 0; i < numberToRead; i++){
 				
 				DBCollection log = db.getCollection("log"+i);
@@ -200,5 +200,28 @@ public class TokuMXPessimist extends TokuMX{
 		return record;
 	}
 	
+	private BasicDBObject beginTransaction(){
+		
+		//Create beginTransaction object
+		BasicDBObject beginTransaction = new BasicDBObject();
+		beginTransaction.append("beginTransaction", 1);
+		beginTransaction.append("isolation", "serializable");
+		
+		return beginTransaction;
+	}
+
+	private BasicDBObject rollbackTransaction(){
+		//Create rollbackTransaction object
+		BasicDBObject rollbackTransaction = new BasicDBObject();
+		rollbackTransaction.append("rollbackTransaction", 1);
+		return rollbackTransaction;
+	}
+	
+	private BasicDBObject commitTransaction(){
+		//Create rollbackTransaction object
+		BasicDBObject commitTransaction = new BasicDBObject();
+		commitTransaction.append("commitTransaction", 1);
+		return commitTransaction;
+	}
 
 }

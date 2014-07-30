@@ -119,8 +119,6 @@ public class DBWorker<T> implements Worker<T>{
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
     	List<String> keysToUse = getKeysForTransaction(transactionSize); 
     	
-    	////System.out.println("key1:" keysToUse.get(0));
-    	//System.out.println(keysToUse.get(1));
     	//Get Random number to assign task
     	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
     	if (rand1< params.getChanceOfRead()){
@@ -130,17 +128,8 @@ public class DBWorker<T> implements Worker<T>{
     	}else if(rand1 < params.getChanceOfWrite()){
     		//Writer
     		record = machine.update(keysToUse, params.getMillisBetweenActions());
-    		
-    	}else if(rand1 < params.getChanceOfReadModifyWrite()){
-    		//Reader + Writer
-    		record = machine.readModifyWrite(keysToUse, params.getMillisBetweenActions());
-    		
     	}else if (rand1 < params.getChanceOfBalanceTransfer()){
-    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1), params.getMillisBetweenActions());
-    	
-    	}else if (rand1 < params.getChanceOfIncrementalUpdate()){
-    		//record = machine.incrementalUpdate(keysToUse, params.getMillisBetweenActions());
-    		
+    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
     	}
 		return record;
 	}
