@@ -97,10 +97,11 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 				// Lock the records by reading them.
 				// IMPORTANT: The gap between here an the query allows other
 				// updates to potentially change the records.
-				// A way around this would be to add a timestamp to the record,
-				// only getting records if it hasn't been updated
-				// The lack of ability to check last update really makes this
-				// feel un-transactional.
+				// - The way around this would be to use 2 separate transactions.  First 
+				//   an MVCC transaction would take a snapshot of the data.  Then a second 
+				//   serializable transaction would lock records and  compare the state to 
+				//   the snapshot.  If the comparison was ok, the second transaction would 
+				//   do the relevant changes.
 				collection.findOne(new BasicDBObject("name", key1));
 				collection.findOne(new BasicDBObject("name", key2));
 				// To truely ensure we have the best view of the data we should

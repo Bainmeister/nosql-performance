@@ -38,10 +38,10 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 public class PerformanceTest2_NOWAR {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX_TRANS_SERIALIABLE,  	//DB Type
+	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX,  	//DB Type
 																false, 				//Compensatory?
 																10, 				//Thread Count
-																1000, 				//Number of Calls
+																5000, 				//Number of Calls
 																10, 				//Batch Size
 																2					//Contended Records
 															);

@@ -135,10 +135,6 @@ public class TokuMXTransactional extends TokuMX {
 		//Amount to transfer
 		int transAmount = key1==key2 ? 0:100;
 		
-		//Create usable keys from key Strings
-		//ObjectId keyObj1 = new ObjectId(key1);
-		//ObjectId keyObj2 = new ObjectId(key2);
-		
 		//Setup search querys
 		BasicDBObject query1 = new BasicDBObject("name",key1);
 		BasicDBObject query2 = new BasicDBObject("name",key2);
@@ -197,10 +193,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.command(beginTransaction(isolation));
 			
 			for (DBCollection col : logCollections){
-				DBCursor cursor = col.find().limit(1000);
-				while (cursor.hasNext()) {
-					cursor.next();
-				}
+				col.find().limit(1000);
 			}
 			
 			db.command(rollbackTransaction());

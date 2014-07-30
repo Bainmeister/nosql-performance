@@ -109,7 +109,7 @@ public class DBWorker<T> implements Worker<T>{
 		}
 		
 		//ensure there  are no recorded errors!
-		//measurement.setErrorCount(0);
+		measurement.setErrorCount(0);
 		init();
 		for (int i = 0 ; i < batchSize;i++){
 			record = workload();

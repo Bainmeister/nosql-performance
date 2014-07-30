@@ -131,10 +131,7 @@ public class Mongo implements DBMachine {
 		ActionRecord record = new ActionRecord();
 
 		for (DBCollection col : logCollections){
-			DBCursor cursor = col.find().limit(1000);
-			while (cursor.hasNext()) {
-				cursor.next();
-			}
+			col.find().limit(1000);
 		}
 		
 		return record;
