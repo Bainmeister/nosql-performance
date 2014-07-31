@@ -78,12 +78,12 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 		// Query to Decrement balance 1
 		BasicDBObject set1 = new BasicDBObject();
 		set1.append("$inc", new BasicDBObject().append("value", -amount));
-		set1.append("$inc", new BasicDBObject().append("tx", 1));
+		//set1.append("$inc", new BasicDBObject().append("tx", 1));
 		
 		// Query to Increment balance 2
 		BasicDBObject set2 = new BasicDBObject();
 		set2.append("$inc", new BasicDBObject().append("value", amount));
-		set2.append("$inc", new BasicDBObject().append("tx", 1));
+		//set2.append("$inc", new BasicDBObject().append("tx", 1));
 		
 		db.requestStart();
 		try {
@@ -137,6 +137,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 	}
 
 	//Explicitly issue a serializable transaction
+	@Override
 	BasicDBObject beginTransaction() {
 		return beginTransaction("serializable");
 	}

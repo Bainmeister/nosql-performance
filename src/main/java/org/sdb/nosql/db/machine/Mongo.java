@@ -19,12 +19,16 @@ public class Mongo implements DBMachine {
 
 	DB db;
 	DBCollection collection;
-	List<DBCollection> logCollections;
-
+	DBCollection log1;
+	DBCollection log2;
+	DBCollection log3;
+	
 	public Mongo(MongoConnection connection) {
 		db = connection.getDb();
 		collection = connection.getCollection();
-		logCollections = connection.getLogCollections();
+		log1 = connection.getLog1();
+		log2 = connection.getLog2();
+		log3 = connection.getLog3();
 	}
 
 	// Don't allow creation without a connection
@@ -44,7 +48,7 @@ public class Mongo implements DBMachine {
 
 	public ActionRecord insert(int numberToAdd, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
-
+		
 		// Attempts to make a individual name - this may not be too accurate if
 		// there
 		// are loads of writes, but I'm not too bothered about this.
@@ -67,7 +71,7 @@ public class Mongo implements DBMachine {
 
 			BasicDBObject newDocument = new BasicDBObject();
 			newDocument.append("$set",
-					new BasicDBObject().append("balance", 200));
+					new BasicDBObject().append("value", 200));
 			BasicDBObject searchQuery = new BasicDBObject().append("name", key);
 
 			collection.update(searchQuery, newDocument);
@@ -129,10 +133,9 @@ public class Mongo implements DBMachine {
 	public ActionRecord logRead(int waitMillis) {
 
 		ActionRecord record = new ActionRecord();
-
-		for (DBCollection col : logCollections){
-			col.find().limit(1000);
-		}
+		log1.find().limit(1000);
+		log2.find().limit(1000);
+		log3.find().limit(1000);
 		
 		return record;
 	}
@@ -147,9 +150,11 @@ public class Mongo implements DBMachine {
 				+ ThreadLocalRandom.current().nextInt(10) + ""
 				+ ThreadLocalRandom.current().nextInt(10);
 		
-		for (DBCollection col :logCollections)
-			col.insert(new BasicDBObject("info", processNum));
 		
+		log1.insert(new BasicDBObject("info", processNum));
+		log2.insert(new BasicDBObject("info", processNum));
+		log3.insert(new BasicDBObject("info", processNum));
+
 
 		return record;
 	}

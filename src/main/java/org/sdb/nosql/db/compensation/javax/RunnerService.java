@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.jws.WebService;
 
+import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 
@@ -14,8 +15,7 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 @WebService(name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
 public interface RunnerService {
 
-    public long balanceTransfer(int loops, List<String> keys, double compensateProbability);
+	public long doWork(WorkerParameters params, List<String> keys);
 
-	public long doWork(WorkerParameters params);
     
 }

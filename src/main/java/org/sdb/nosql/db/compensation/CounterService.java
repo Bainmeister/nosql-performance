@@ -8,6 +8,7 @@ import com.mongodb.DBCollection;
 
 import javax.inject.Inject;
 
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -47,5 +48,19 @@ public class CounterService {
             compensationManager.setCompensateOnly();
         }
 		
+	}
+    
+    @Compensatable
+	public void update(List<String> keys, int compensateProbability,
+			DBCollection collection) {
+		
+    	for (String key : keys){
+    		counterManager.incrimentCounter(key, 1, collection );
+    		
+            if (rand.nextDouble() <= compensateProbability) {
+                compensationManager.setCompensateOnly();
+            }
+    	}
+    	
 	}
 }

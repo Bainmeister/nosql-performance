@@ -38,18 +38,21 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 public class PerformanceTest2_NOWAR {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX,  	//DB Type
+	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX_TRANS_SERIALIABLE,  	//DB Type
 																false, 				//Compensatory?
 																10, 				//Thread Count
-																5000, 				//Number of Calls
+																500, 				//Number of Calls
 																10, 				//Batch Size
 																2					//Contended Records
 															);
 	private void setTestParams(){
 		
-		params.setChanceOfBalanceTransfer(1000);
 		params.setChanceOfRead(0);
+		params.setChanceOfInsert(0);
 		params.setChanceOfUpdate(0);
+		params.setChanceOfBalanceTransfer(0);
+		params.setChanceOfLogRead(0);
+		params.setChanceOfLogInsert(1000);
 		
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);

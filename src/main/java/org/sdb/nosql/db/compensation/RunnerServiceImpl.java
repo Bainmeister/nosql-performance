@@ -1,116 +1,93 @@
 package org.sdb.nosql.db.compensation;
 
-import org.jboss.narayana.compensations.api.TransactionCompensatedException;
 import org.sdb.nosql.db.compensation.javax.RunnerService;
-import org.sdb.nosql.db.connection.DBConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
-import org.sdb.nosql.db.machine.DBMachine;
+import org.sdb.nosql.db.machine.MongoCompensator;
 import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.mongodb.DBCollection;
-
-import javax.inject.Inject;
 import javax.jws.WebMethod;
 import javax.jws.WebService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author paul.robinson@redhat.com 10/07/2014
  */
 @WebService(serviceName = "HotelServiceService", portName = "HotelService", name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
-public class RunnerServiceImpl implements RunnerService, DBMachine {
-
+public class RunnerServiceImpl implements RunnerService {
 
     private Random rand = new Random(System.currentTimeMillis());
 
     private List<String>availibleKeys = new ArrayList<String>();
 
-    @Inject
-    private CounterService counterService;
-
     private double compensateProbability;
 
-    private AtomicInteger compensations = new AtomicInteger(0);
-   
+	private WorkerParameters params;
+	
     @WebMethod
-    public long balanceTransfer(int loops, List<String> keys, double compensateProbability) {
+    public long doWork(WorkerParameters params, List<String> availibleKeys) {
     	
-    	this.compensateProbability = compensateProbability;
-    	this.availibleKeys = keys;
+    	this.compensateProbability = params.COMPENSATE_PROB;
+    	this.availibleKeys = availibleKeys;
+    	this.params = params;
     	
-    	MongoConnection conn = new MongoConnection();
-    	DBCollection col = conn.getCollection();
-    	
-    	
-        long millis = System.currentTimeMillis();
-        for (int i = 0; i < loops; i++) {
-        	
-        	//Select two Random keys -shouldnt matter if its the same one.
-            int rand1 = rand.nextInt(availibleKeys.size());
-            int rand2 = rand.nextInt(availibleKeys.size());
-            
-        	//update them
-            try {
-            	counterService.updateCounters(    availibleKeys.get(rand1), availibleKeys.get(rand2), 1, compensateProbability, col);
-            } catch (TransactionCompensatedException e) {
-                compensations.incrementAndGet();
-            }
-            
+    	//Connect to the db and get relevant collections
+    	MongoConnection connection = new MongoConnection();
+		DBCollection collection = connection.getCollection();
+		DBCollection log1 = connection.getLog1();
+		DBCollection log2 = connection.getLog1();
+		DBCollection log3 = connection.getLog1();
+		
+        long startMillis = System.currentTimeMillis();
+        for (int i = 0; i < params.getBatchSize(); i++) {
+        	workload();
         }
-        long timeTaken = (System.currentTimeMillis() - millis);
-        conn.disconnectDB();
+        long endMillis = System.currentTimeMillis();
+    	
         
-        availibleKeys.clear();
-       
-        return timeTaken;
+        connection.disconnectDB();
+        return endMillis - startMillis;
     }
 
-	@Override
-	public long doWork(WorkerParameters params) {
-		// This method does what doWork does for a standard DB interaction.
-		return 0;
-	}
+	ActionRecord workload() {
+    	
+		ActionRecord record = new ActionRecord();
+    	List<String> keysToUse =new ArrayList<String>();
+    	MongoCompensator machine = new MongoCompensator(new MongoConnection());
+    	
+    	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
+    	for (int i =0; i< transactionSize;i++)
+    		keysToUse.add(availibleKeys.get(rand.nextInt(availibleKeys.size())));
 
-	@Override
-	public ActionRecord read(List<String> keys, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ActionRecord update(List<String> keys, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ActionRecord logInsert(int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ActionRecord logRead(int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ActionRecord insert(int numberToAdd, int waitMillis) {
-		// TODO Auto-generated method stub
-		return null;
+    	
+    	//Get Random number to assign task
+    	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
+    	
+    	if (rand1< params.getChanceOfRead()){
+    		record = machine.read(keysToUse,params.getMillisBetweenActions());
+    		
+    	}else if(rand1 < params.getChanceOfInsert()){
+        		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
+    
+    	}else if(rand1 < params.getChanceOfUpdate()){
+    		record = machine.update(keysToUse, params.getMillisBetweenActions());	
+    	      	
+    	}else if (rand1 < params.getChanceOfBalanceTransfer()){
+    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
+    	
+    	}else if (rand1 < params.getChanceOfLogRead()){
+    		record = machine.logRead(params.getMillisBetweenActions());
+    		
+    	}else if (rand1 < params.getChanceOfLogInsert()){
+    		record = machine.logInsert( params.getMillisBetweenActions());
+    	}
+    	
+		return record;
 	}
 
 }

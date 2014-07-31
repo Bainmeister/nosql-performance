@@ -13,7 +13,9 @@ public class MongoConnection implements DBConnection {
 	private MongoClient mongoClient;
 	DB db;
 	DBCollection collection;
-	List<DBCollection> logCollections;
+	DBCollection log1;
+	DBCollection log2;
+	DBCollection log3;
 	
 	public MongoConnection(){
 		connectDB();
@@ -26,13 +28,10 @@ public class MongoConnection implements DBConnection {
 			db = mongoClient.getDB("test");
 			collection = db.getCollection("counters");
 			
-			//Add 3 logs - parametrise this in the future
-			for (int i = 0; i<3;i++){
-				DBCollection temp = db.getCollection("log"+i);
-				temp.getFullName();
-				//logCollections.add();
-			}
-		
+			log1 = db.getCollection("log1");
+			log2 = db.getCollection("log2");
+			log3 = db.getCollection("log3");
+			
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -62,8 +61,14 @@ public class MongoConnection implements DBConnection {
 		return collection;
 	}
 
-	public List<DBCollection> getLogCollections() {
-		return logCollections;
+	public DBCollection getLog1() {
+		return log1;
 	}
-
+	public DBCollection getLog2() {
+		return log2;
+	}
+	public DBCollection getLog3() {
+		return log3;
+	}
+	
 }

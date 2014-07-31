@@ -80,7 +80,7 @@ public class DBWorker<T> implements Worker<T>{
 			
 			//TODO add and actionRecord to pass back rather than workTimeMillis
 	        RunnerService runnerService = createWebServiceClient();
-	        workTimeMillis = runnerService.doWork(params);
+	        workTimeMillis = runnerService.doWork(params, contendedRecords);
 	        workTimeMillis  = timetaken;
 	        
 	        //GET OUT! No need to do any other work!
@@ -141,7 +141,7 @@ public class DBWorker<T> implements Worker<T>{
         		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
     
     	}else if(rand1 < params.getChanceOfUpdate()){
-    		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
+    		record = machine.update(keysToUse, params.getMillisBetweenActions());	
     	      	
     	}else if (rand1 < params.getChanceOfBalanceTransfer()){
     		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());

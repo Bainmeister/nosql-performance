@@ -7,14 +7,10 @@ import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 
 public class TokuMXTransactional extends TokuMX {
-
-	private String isolation = "";
 	
 	public TokuMXTransactional(MongoConnection connection) {
 		super(connection);
@@ -30,7 +26,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction(isolation));
+				db.command(beginTransaction());
 				
 				for (String key : keys)
 					collection.findOne(new BasicDBObject("name",key));
@@ -54,7 +50,7 @@ public class TokuMXTransactional extends TokuMX {
 		// Attempts to make a individual name - this may not be too accurate if
 		// there
 		// are loads of writes, but I'm not too bothered about this.
-		String processNum = System.currentTimeMillis() + "_"
+		final String processNum = System.currentTimeMillis() + "_"
 				+ ThreadLocalRandom.current().nextInt(10) + ""
 				+ ThreadLocalRandom.current().nextInt(10);
 		
@@ -64,20 +60,17 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction(isolation));
+				db.command(beginTransaction());
 				
-				boolean updateSucceeded = true;
+				boolean insertSucceeded = true;
 				for (int i = 1; i < numberToAdd + 1; i++) {
-					WriteResult write = collection.insert(new BasicDBObject("name", processNum + "_"
+					collection.insert(new BasicDBObject("name", processNum + "_"
 							+ String.valueOf(i)).append("value", 0).append("tx", 0));
-				
-					if (write.getN() == 0)	
-						updateSucceeded =false;
 				}
 
 				//If either write failed, rollback the transaction.
-				db.command(updateSucceeded? commitTransaction() : rollbackTransaction());
-				record.setSuccess(updateSucceeded);
+				db.command(insertSucceeded? commitTransaction() : rollbackTransaction());
+				record.setSuccess(insertSucceeded);
 			} catch (MongoException e){
 				record.setSuccess(false);
 				db.command(rollbackTransaction());
@@ -100,7 +93,7 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
-				db.command(beginTransaction(isolation));
+				db.command(beginTransaction());
 				boolean updateSucceeded = true;
 				for (String key : keys){
 					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",2000));
@@ -155,7 +148,7 @@ public class TokuMXTransactional extends TokuMX {
 			//***** TRANSACTION****//
 			try{
 				
-				db.command(beginTransaction(isolation));
+				db.command(beginTransaction());
 	
 				WriteResult write1 = collection.update(query1, set1);  	//Update record 1
 				waitBetweenActions(waitMillis);							//Delay
@@ -190,11 +183,12 @@ public class TokuMXTransactional extends TokuMX {
 		
 		
 		try {
-			db.command(beginTransaction(isolation));
+			db.command(beginTransaction());
 			
-			for (DBCollection col : logCollections){
-				col.find().limit(1000);
-			}
+			
+			log1.find().limit(1000);
+			log2.find().limit(1000);
+			log3.find().limit(1000);
 			
 			db.command(rollbackTransaction());
 		}catch (MongoException e){
@@ -216,9 +210,9 @@ public class TokuMXTransactional extends TokuMX {
 				+ ThreadLocalRandom.current().nextInt(10) + ""
 				+ ThreadLocalRandom.current().nextInt(10);
 		
-		
-		for (DBCollection col :logCollections)
-			col.insert(new BasicDBObject("info", processNum));
+		log1.insert(new BasicDBObject("info", processNum));
+		log2.insert(new BasicDBObject("info", processNum));
+		log3.insert(new BasicDBObject("info", processNum));
 		
 		db.requestStart();
 		try{
@@ -226,15 +220,17 @@ public class TokuMXTransactional extends TokuMX {
 			db.requestEnsureConnection();
 			try {
 				
-				db.command(beginTransaction(isolation));
+				db.command(beginTransaction());
 				
 				boolean success =true;
-				for (DBCollection col :logCollections){
-					WriteResult write = col.insert(new BasicDBObject("info", processNum));
-					
-					if (write.getN()==0)
-						success = false;
-				}
+				
+				WriteResult write1 = log1.insert(new BasicDBObject("info", processNum));
+				WriteResult write2 = log2.insert(new BasicDBObject("info", processNum));
+				WriteResult write3 = log3.insert(new BasicDBObject("info", processNum));
+				
+				if (write1.getN()==0||write2.getN()==0||write3.getN()==0)
+					success = false;
+				
 				
 				db.command(success==false?rollbackTransaction():commitTransaction());
 				
@@ -249,8 +245,11 @@ public class TokuMXTransactional extends TokuMX {
 		return record;
 	}
 	
+	BasicDBObject beginTransaction() {
+		return beginTransaction("");
+	}
+	
 	BasicDBObject beginTransaction(String isolation){
-		
 		//Create beginTransaction object - standard default transaction (MVCC)
 		BasicDBObject beginTransaction = new BasicDBObject();
 		beginTransaction.append("beginTransaction", 1);
@@ -274,12 +273,6 @@ public class TokuMXTransactional extends TokuMX {
 		return commitTransaction;
 	}
 
-	public String getIsolation() {
-		return isolation;
-	}
 
-	public void setIsolation(String isolation) {
-		this.isolation = isolation;
-	}
 	
 }
