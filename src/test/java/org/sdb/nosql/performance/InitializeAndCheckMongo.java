@@ -45,9 +45,9 @@ public class InitializeAndCheckMongo {
 				
 				i = i + currentValue;
 				
-				if(currentValue!=0){
-					System.out.println(currentValue);
-				}
+				//if(currentValue!=0){
+				//	System.out.println(currentValue);
+				//}
 				
 			}
 		} finally {

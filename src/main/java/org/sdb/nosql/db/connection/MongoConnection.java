@@ -34,6 +34,7 @@ public class MongoConnection implements DBConnection {
 			
 			
 		} catch (UnknownHostException e) {
+			System.out.println("Uh-oh connection error!");
 			e.printStackTrace();
 		}
 		

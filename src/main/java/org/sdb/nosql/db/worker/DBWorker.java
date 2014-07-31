@@ -61,8 +61,6 @@ public class DBWorker<T> implements Worker<T>{
 	private List<String> contendedRecords;
 	private WorkerParameters params;
 	
-	DBMachine machine;
-	
 	//Construct using a list of contended records and the parameters for running the test. 
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
 		this.contendedRecords = contendedRecords;
@@ -73,6 +71,8 @@ public class DBWorker<T> implements Worker<T>{
 	@Override
 	public T doWork(T context, int batchSize, Result<T> measurement) {
 		
+		DBMachine machine =null;
+			
 		ActionRecord record = null;
 		
 		//Call the doWork of the RunnerService and bug out!
@@ -122,11 +122,16 @@ public class DBWorker<T> implements Worker<T>{
 			machine = new TokuMXTransactionalSerializable(new MongoConnection());
 		}
 		
+		if (machine == null){
+			System.out.println("Something is wrong.  No DBMachine was set");
+			return null;
+		}
+		
 		//ensure there  are no recorded errors!
 		measurement.setErrorCount(0);
 		init();
 		for (int i = 0 ; i < batchSize;i++){
-			record = workload();
+			record = workload(machine);
 		}
 		fini();
 		
@@ -134,12 +139,14 @@ public class DBWorker<T> implements Worker<T>{
     	if ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )
     		measurement.incrementErrorCount();
     	
+    	
+    	
     	workTimeMillis = getFiniTimeMillis() - getInitTimeMillis();
-    		
+    	machine = null;
 		return null;
 	}
 	
-    private ActionRecord workload() {
+    private ActionRecord workload(DBMachine machine) {
     	ActionRecord record = new ActionRecord();
     	
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 

@@ -5,7 +5,6 @@ public class DBTypes {
 	final public static int NOT_SET= 0;
 	
 	final public static int FOUNDATIONDB = 10;
-	final public static int FOUNDATIONDB_BLOCK_NO_RETRY =11;
 	final public static int FOUNDATIONDB_NO_RETRY =12;
 	
 	final public static int MONGODB = 20;

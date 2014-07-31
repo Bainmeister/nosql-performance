@@ -38,12 +38,12 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 public class PerformanceTest2_NOWAR {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB_NO_RETRY,  	//DB Type
-																true, 				//Compensatory?
+	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX,  	//DB Type
+																false, 				//Compensatory?
 																10, 				//Thread Count
-																500, 				//Number of Calls
+																10000, 				//Number of Calls
 																10, 				//Batch Size
-																2					//Contended Records
+																10					//Contended Records
 															);
 	private void setTestParams(){
 		
@@ -52,7 +52,7 @@ public class PerformanceTest2_NOWAR {
 		params.setChanceOfUpdate(0);
 		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
-		params.setChanceOfLogInsert(0);
+		params.setChanceOfLogInsert(1000);
 		
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
@@ -70,7 +70,7 @@ public class PerformanceTest2_NOWAR {
 
 		int dbType = params.getDbType(); 
 		
-		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
+		if (dbType == DBTypes.FOUNDATIONDB || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
 			InitializeAndCheckFDB.initFDB(params.getContendedRecords());
 		}else {
 			InitializeAndCheckMongo.setupMongo(params.getContendedRecords());
@@ -95,7 +95,7 @@ public class PerformanceTest2_NOWAR {
 		
 		//1) Connect to the DB and grab some keys
 		int dbType = params.getDbType();
-		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
+		if (dbType == DBTypes.FOUNDATIONDB || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
 			contendedKeys = new KeyGen(new FoundationConnection()).getKeys(params.getContendedRecords());
 		}else {
 			contendedKeys = new KeyGen(new MongoConnection()).getKeys(params.getContendedRecords());
@@ -113,11 +113,12 @@ public class PerformanceTest2_NOWAR {
 		
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
-		System.out.println("Time taken:      "  + measurement.getTotalMillis());
-		System.out.println("Batch size:      "  + measurement.getBatchSize());
-		System.out.println("Thread count:    "  + measurement.getThreadCount());
-		System.out.println("Number of calls: "  + measurement.getNumberOfCalls());
+		System.out.println("Time taken:         "  + measurement.getTotalMillis());
+		System.out.println("Batch size:         "  + measurement.getBatchSize());
+		System.out.println("Thread count:       "  + measurement.getThreadCount());
+		System.out.println("Number of calls:    "  + measurement.getNumberOfCalls());
 		System.out.println("Number of Failures: "  + measurement.getErrorCount());
+		System.out.println("CPS:                "  + measurement.getThroughput());
 		System.out.println("***************************");
 	}
 	
@@ -127,7 +128,7 @@ public class PerformanceTest2_NOWAR {
 		int i = 0;
 		int dbType = params.getDbType(); 
 		
-		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
+		if (dbType == DBTypes.FOUNDATIONDB  || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
 			i = InitializeAndCheckFDB.checkBalance();
 		}else {
 			i = InitializeAndCheckMongo.checkMongo();

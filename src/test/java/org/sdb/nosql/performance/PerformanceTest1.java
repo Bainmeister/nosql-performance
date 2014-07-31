@@ -58,19 +58,21 @@ import com.mongodb.MongoClient;
 
 @RunWith(Arquillian.class)
 public class PerformanceTest1 {	
-	
-	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB_NO_RETRY,  	//DB Type
+	//********************************************
+	//****************WARNING*********************
+	// THIS IS TO RUN COMPENSATION & NOTHING ELSE!
+	//********************************************
+	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX,  	//DB Type
 																true, 				//Compensatory?
 																10, 				//Thread Count
-																500, 				//Number of Calls
+																100, 				//Number of Calls
 																10, 				//Batch Size
 																2					//Contended Records
 															);
 	private void setTestParams(){
 		
-		params.setChanceOfRead(0);
-		params.setChanceOfInsert(1000);
+		params.setChanceOfRead(1000);
+		params.setChanceOfInsert(0);
 		params.setChanceOfUpdate(0);
 		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
