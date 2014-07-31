@@ -64,7 +64,7 @@ public class InitializeAndCheckFDB {
 
 						// Proof that stuff is happening!
 						// if (temp!= 0)
-						// System.out.println(temp);
+						//System.out.println(temp);
 					}
 
 				} catch (FDBException e) {
@@ -117,7 +117,7 @@ public class InitializeAndCheckFDB {
 				int added = 0;
 				for (String key : indexes) {
 					added = added + 1;
-					if (added < i)
+					if (added < i+1)
 						addBalanceKey(tr, key);
 				}
 				return null;

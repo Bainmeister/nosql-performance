@@ -38,7 +38,7 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 public class PerformanceTest2_NOWAR {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.TOKUMX_TRANS_SERIALIABLE,  	//DB Type
+	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB_NO_RETRY,  	//DB Type
 																false, 				//Compensatory?
 																10, 				//Thread Count
 																500, 				//Number of Calls
@@ -87,7 +87,7 @@ public class PerformanceTest2_NOWAR {
 		System.out.println("Threads:    "+ params.getThreadCount());
 		System.out.println("Batch size: "+ params.getBatchSize());
 		System.out.println("Calls:      "+ params.getNumberOfCalls());
-		//System.out.println("***************************");
+		System.out.println("***************************");
 		
 		//Pre-test
 		setTestParams();
@@ -112,7 +112,7 @@ public class PerformanceTest2_NOWAR {
 													.measure(workerTemplate, workerTemplate, 100);
 		
 		//keys.addAll(cursor);
-		System.out.println("***************************");
+		//System.out.println("***************************");
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
 		System.out.println("Time taken:      "  + measurement.getTotalMillis());

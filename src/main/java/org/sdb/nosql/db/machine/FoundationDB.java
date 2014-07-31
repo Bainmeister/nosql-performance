@@ -144,7 +144,7 @@ public class FoundationDB implements DBMachine {
 
 	public ActionRecord balanceTransfer(final String key1, final String key2,
 			final int amount, final int waitMillis) {
-
+		
 		return db.run(new Function<Transaction, ActionRecord>() {
 
 			ActionRecord record = new ActionRecord();
@@ -155,7 +155,7 @@ public class FoundationDB implements DBMachine {
 				record.setAttemptsTaken(record.getAttemptsTaken() + 1);
 
 				int balanceToSet = key1 == key2 ? 0 : amount;
-
+				
 				tr.set(Tuple.from("value", key1).pack(), encodeInt(decodeInt(tr
 						.get(Tuple.from("value", key1).pack()).get())
 						- balanceToSet));

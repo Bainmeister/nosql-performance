@@ -38,6 +38,7 @@ import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.machine.FoundationDB;
+import org.sdb.nosql.db.machine.FoundationDBNoRetry;
 import org.sdb.nosql.db.machine.Mongo;
 import org.sdb.nosql.db.machine.TokuMX;
 import org.sdb.nosql.db.machine.TokuMXTransactional;
@@ -91,6 +92,9 @@ public class DBWorker<T> implements Worker<T>{
 		//Set up the relevant DBMaching to store connection and do work.	
 		if (params.getDbType() == DBTypes.FOUNDATIONDB){
 			machine = new FoundationDB(new FoundationConnection());
+			
+		}else if (params.getDbType() == DBTypes.FOUNDATIONDB_NO_RETRY){
+			machine = new FoundationDBNoRetry(new FoundationConnection());		
 		
 		}else if (params.getDbType() == DBTypes.MONGODB){
 			machine = new Mongo(new MongoConnection());
@@ -144,6 +148,7 @@ public class DBWorker<T> implements Worker<T>{
     		record = machine.update(keysToUse, params.getMillisBetweenActions());	
     	      	
     	}else if (rand1 < params.getChanceOfBalanceTransfer()){
+    		
     		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
     	
     	}else if (rand1 < params.getChanceOfLogRead()){
