@@ -73,17 +73,27 @@ public class DBWorker<T> implements Worker<T>{
 	@Override
 	public T doWork(T context, int batchSize, Result<T> measurement) {
 		
-		long timetaken = 0;
 		ActionRecord record = null;
 		
 		//Call the doWork of the RunnerService and bug out!
 		if (params.isCompensator()){
 			
-			//TODO add and actionRecord to pass back rather than workTimeMillis
+			//TODO testing
 	        RunnerService runnerService = createWebServiceClient();
-	        workTimeMillis = runnerService.doWork(params, contendedRecords);
-	        workTimeMillis  = timetaken;
+	        workTimeMillis = runnerService.doWork(contendedRecords, 
+	        									  params.getChanceOfRead(), 
+	        									  params.getChanceOfInsert(),
+	        									  params.getChanceOfUpdate(),
+	        									  params.getChanceOfBalanceTransfer(),
+	        									  params.getChanceOfLogRead(),
+	        									  params.getChanceOfLogInsert(),
+	        									  params.getMaxTransactionSize(),
+	        									  params.getMinTransactionSize(),
+	        									  params.COMPENSATE_PROB,
+	        									  batchSize, 
+	        									  params.getMillisBetweenActions());
 	        
+	        //workTimeMillis = runnerService.doWork();
 	        //GET OUT! No need to do any other work!
 	        return null;
 		}

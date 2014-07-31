@@ -60,23 +60,26 @@ import com.mongodb.MongoClient;
 public class PerformanceTest1 {	
 	
 	//Test parameters
-	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB,  	//DB Type
-																false, 				//Compensatory?
+	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB_NO_RETRY,  	//DB Type
+																true, 				//Compensatory?
 																10, 				//Thread Count
-																1000, 				//Number of Calls
+																500, 				//Number of Calls
 																10, 				//Batch Size
-																3					//Contended Records
+																2					//Contended Records
 															);
 	private void setTestParams(){
 		
-		params.setChanceOfBalanceTransfer(999);
-		params.setChanceOfRead(1);
+		params.setChanceOfRead(0);
+		params.setChanceOfInsert(1000);
+		params.setChanceOfUpdate(0);
+		params.setChanceOfBalanceTransfer(0);
+		params.setChanceOfLogRead(0);
+		params.setChanceOfLogInsert(0);
 		
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
 		params.setMillisBetweenActions(0);
 	}
-	
 	
 	
 	@Deployment
@@ -122,13 +125,8 @@ public class PerformanceTest1 {
 	public void resetAccountData() throws Exception {
 
 		int dbType = params.getDbType(); 
+		InitializeAndCheckMongo.setupMongo(params.getContendedRecords());
 		
-		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
-			InitializeAndCheckFDB.initFDB(params.getContendedRecords());
-		}else {
-			InitializeAndCheckMongo.setupMongo(params.getContendedRecords());
-		}
-			
 	}
 
 
@@ -157,29 +155,25 @@ public class PerformanceTest1 {
 													params.getBatchSize())
 													.measure(workerTemplate, workerTemplate, 100);
 		
-		//keys.addAll(cursor);
-		System.out.println("***************************");
+		
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
 		System.out.println("Time taken:      "  + measurement.getTotalMillis());
 		System.out.println("Batch size:      "  + measurement.getBatchSize());
 		System.out.println("Thread count:    "  + measurement.getThreadCount());
 		System.out.println("Number of calls: "  + measurement.getNumberOfCalls());
+		System.out.println("Number of Failures: "  + measurement.getErrorCount());
 		System.out.println("***************************");
+	
 	}
 	
 	@After
 	public void accountCheck() throws Exception {
 
-		int i = 0;
-		int dbType = params.getDbType(); 
-		
-		if (dbType == DBTypes.FOUNDATIONDB || dbType == DBTypes.FOUNDATIONDB_BLOCK_NO_RETRY || dbType ==DBTypes.FOUNDATIONDB_NO_RETRY){
-			i = InitializeAndCheckFDB.checkBalance();
-		}else {
-			i = InitializeAndCheckMongo.checkMongo();
-		}
+		int i = InitializeAndCheckMongo.checkMongo();
+	
 		
 		System.out.println("variance= "+ i);
+		System.out.println("***************************");
 	}
 }

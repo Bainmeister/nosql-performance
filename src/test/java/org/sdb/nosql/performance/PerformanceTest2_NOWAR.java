@@ -39,7 +39,7 @@ public class PerformanceTest2_NOWAR {
 	
 	//Test parameters
 	private WorkerParameters params = new WorkerParameters(		DBTypes.FOUNDATIONDB_NO_RETRY,  	//DB Type
-																false, 				//Compensatory?
+																true, 				//Compensatory?
 																10, 				//Thread Count
 																500, 				//Number of Calls
 																10, 				//Batch Size
@@ -52,7 +52,7 @@ public class PerformanceTest2_NOWAR {
 		params.setChanceOfUpdate(0);
 		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
-		params.setChanceOfLogInsert(1000);
+		params.setChanceOfLogInsert(0);
 		
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
@@ -111,8 +111,6 @@ public class PerformanceTest2_NOWAR {
 													params.getBatchSize())
 													.measure(workerTemplate, workerTemplate, 100);
 		
-		//keys.addAll(cursor);
-		//System.out.println("***************************");
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
 		System.out.println("Time taken:      "  + measurement.getTotalMillis());
