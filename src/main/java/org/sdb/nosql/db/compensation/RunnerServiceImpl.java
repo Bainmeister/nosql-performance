@@ -8,6 +8,7 @@ import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.mongodb.DBCollection;
 
+import javax.inject.Inject;
 import javax.jws.WebMethod;
 import javax.jws.WebService;
 
@@ -24,26 +25,63 @@ public class RunnerServiceImpl implements RunnerService {
 
 	private Random rand = new Random(System.currentTimeMillis());
 
+	private List<String>  availibleKeys;
+	
+	@Inject
+	private CounterService counterService;
+	
+	
+	private MongoCompensator machine = new MongoCompensator(new MongoConnection(), counterService);
+	
+	private int chanceOfRead, chanceOfInsert, chanceOfUpdate,
+					chanceOfBalanceTransfer, chanceOfLogRead, chanceOfLogInsert;
+	
+	private int maxTransactionSize, minTransactionSize;
+	private double compensateProbability;
+	private int batchSize, millisBetween;
+	
+	@Override
+	public void setContendedRecords(List<String> availibleKeys) {
+		this.availibleKeys = availibleKeys;
+	}
+	
+	@Override
 	@WebMethod
-	public long doWork(List<String> availibleKeys, int chanceOfRead,
+	public void setChances(int chanceOfRead,
 			int chanceOfInsert, int chanceOfUpdate,
 			int chanceOfBalanceTransfer, int chanceOfLogRead,
-			int chanceOfLogInsert, int maxTransactionSize, 
-			int minTransactionSize, double compensateProbability, 
-			int batchSize, int millisBetween) {
+			int chanceOfLogInsert){
+		
+		this.chanceOfRead = chanceOfRead;
+		this.chanceOfInsert = chanceOfInsert;
+		this.chanceOfUpdate = chanceOfUpdate;
+		this.chanceOfBalanceTransfer = chanceOfBalanceTransfer;
+		this.chanceOfLogRead = chanceOfLogRead;
+		this.chanceOfLogInsert = chanceOfLogInsert; 
+	}
+	
+	@Override
+	@WebMethod
+	public void setRemaining(int maxTransactionSize, int minTransactionSize,
+								double compensateProbability, int batchSize, int millisBetween){
+		
+		this.maxTransactionSize = maxTransactionSize;
+		this.minTransactionSize = minTransactionSize;
+		this.compensateProbability = compensateProbability;
+		this.batchSize = batchSize;
+		this.millisBetween = millisBetween;
+	}
+	
 
-		// Connect to the db and get relevant collections
-		MongoConnection connection = new MongoConnection();
-		DBCollection collection = connection.getCollection();
-		DBCollection log1 = connection.getLog1();
-		DBCollection log2 = connection.getLog1();
-		DBCollection log3 = connection.getLog1();
-
+	
+	@Override
+	@WebMethod
+	public long doWork() {
+		millisBetween = 0;	
+		
 		long startMillis = System.currentTimeMillis();
 		for (int i = 0; i < batchSize; i++) {
-			workload(availibleKeys, chanceOfRead, chanceOfInsert, chanceOfUpdate,
-					chanceOfBalanceTransfer, chanceOfLogRead, chanceOfLogInsert,
-					maxTransactionSize, minTransactionSize, compensateProbability, millisBetween);
+			ActionRecord record = workload();
 		}
 		long endMillis = System.currentTimeMillis();
 
@@ -51,17 +89,12 @@ public class RunnerServiceImpl implements RunnerService {
 		return endMillis - startMillis;
 	}
 
-	ActionRecord workload(List<String> availibleKeys, int chanceOfRead,
-							int chanceOfInsert, int chanceOfUpdate,
-							int chanceOfBalanceTransfer, int chanceOfLogRead,
-							int chanceOfLogInsert, int maxTransactionSize, 
-							int minTransactionSize,	double compensateProbability,
-							int millisBetween) {
+	ActionRecord workload() {
 
 		ActionRecord record = new ActionRecord();
 
 		List<String> keysToUse = new ArrayList<String>();
-		MongoCompensator machine = new MongoCompensator(new MongoConnection());
+		
 
 		final int transactionSize = maxTransactionSize == minTransactionSize ? maxTransactionSize
 				: ThreadLocalRandom.current().nextInt(maxTransactionSize) + minTransactionSize;
@@ -96,5 +129,5 @@ public class RunnerServiceImpl implements RunnerService {
 
 		return record;
 	}
-
 }
+

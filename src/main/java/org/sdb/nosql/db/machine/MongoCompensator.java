@@ -10,45 +10,48 @@ import org.sdb.nosql.db.compensation.CounterService;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
-import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+
 
 public class MongoCompensator extends Mongo {
 
-    @Inject
-    private CounterService counterService;
-    
-    private AtomicInteger compensations = new AtomicInteger(0);
-	
-    //TODO for now just set the compensation probability to 0
+	private AtomicInteger compensations = new AtomicInteger(0);
+
 	private int compensateProbability = 0;
-    
-	public MongoCompensator(MongoConnection connection) {
+	
+	public MongoCompensator(MongoConnection connection, CounterService counterService) {
 		super(connection);
 	}
+
+	@Inject
+	private CounterService counterService;
 	
-	//Reads will be the same a Mongo, however any writes/updates need to go via the
-	//Compensation methods
-    
+	// Reads will be the same a Mongo, however any writes/updates need to go via
+	// the
+	// Compensation methods
 	@Override
-	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
-    	ActionRecord record = new ActionRecord();
-        try {
-        	counterService.updateCounters( key1,key2, amount, compensateProbability, collection);
-        } catch (TransactionCompensatedException e) {
-            compensations.incrementAndGet();
-        }
-        return record;
+	public ActionRecord balanceTransfer(String key1, String key2, int amount,
+			int waitMillis) {
+		ActionRecord record = new ActionRecord();	
+		
+		try {
+			counterService.updateCounters( key1, key2, amount, compensateProbability, collection);
+		} catch (TransactionCompensatedException e) {
+			compensations.incrementAndGet();
+		}
+		
+		return record;
 	}
-	
+
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
-        try {
-        	counterService.update(keys, compensateProbability, collection);
-        } catch (TransactionCompensatedException e) {
-            compensations.incrementAndGet();
-        }
-        return record;
+		try {
+			counterService.update(keys, compensateProbability, collection);
+		} catch (TransactionCompensatedException e) {
+			compensations.incrementAndGet();
+		}
+		return record;
 	}
-	
+
 }

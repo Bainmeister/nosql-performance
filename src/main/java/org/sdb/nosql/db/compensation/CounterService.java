@@ -2,12 +2,10 @@ package org.sdb.nosql.db.compensation;
 
 import org.jboss.narayana.compensations.api.Compensatable;
 import org.jboss.narayana.compensations.api.CompensationManager;
-import org.sdb.nosql.db.connection.DBConnection;
 
 import com.mongodb.DBCollection;
 
 import javax.inject.Inject;
-
 import java.util.List;
 import java.util.Random;
 
@@ -37,10 +35,15 @@ public class CounterService {
         }
     }
     
+    public void cry(){
+    	System.out.println("WAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    }
+    
+    
     @Compensatable
 	public void updateCounters(String string, String string2, int amount,
 			double compensateProbability, DBCollection col) {
-       
+    	
     	counterManager.incrimentCounter(string, amount, col );
         counterManager.decrementCounter(string2, amount,col );
 

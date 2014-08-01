@@ -52,7 +52,7 @@ import org.sdb.nosql.db.performance.ActionRecord;
  * A Worker that interacts with DBMachine to manipulate Databases. 
  * @param <T>
  */
-public class DBWorker<T> implements Worker<T>{
+public class DBWorker{
 
 	private long workTimeMillis;
 	private long initTimemillis;
@@ -61,92 +61,89 @@ public class DBWorker<T> implements Worker<T>{
 	private List<String> contendedRecords;
 	private WorkerParameters params;
 	
+	private DBMachine machine;
+	
 	//Construct using a list of contended records and the parameters for running the test. 
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
+		
 		this.contendedRecords = contendedRecords;
 		this.params = params;
-	}
-			
-	
-	@Override
-	public T doWork(T context, int batchSize, Result<T> measurement) {
 		
-		DBMachine machine =null;
+		//Set up the relevant DBMaching to store connection and do work.	
+		if (params.getDbType() == DBTypes.FOUNDATIONDB){
+			this.machine = new FoundationDB(new FoundationConnection());
+			
+		}else if (params.getDbType() == DBTypes.FOUNDATIONDB_NO_RETRY){
+			this.machine = new FoundationDBNoRetry(new FoundationConnection());		
+		
+		}else if (params.getDbType() == DBTypes.MONGODB){
+			this.machine = new Mongo(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX){
+			this.machine = new TokuMX(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS){
+			this.machine = new TokuMXTransactional(new MongoConnection());	
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_MVCC)	{
+			this.machine = new TokuMXTransactionalMVCC(new MongoConnection());
+			
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_SERIALIABLE)	{
+			this.machine = new TokuMXTransactionalSerializable(new MongoConnection());
+		}
+		
+	}
+
+
+	public Measusement doWork(int batchSize) {
+		
+		Measusement measurement = new Measusement();
 			
 		ActionRecord record = null;
 		
 		//Call the doWork of the RunnerService and bug out!
 		if (params.isCompensator()){
 			
-			//TODO testing
+			
 	        RunnerService runnerService = createWebServiceClient();
-	        workTimeMillis = runnerService.doWork(contendedRecords, 
-	        									  params.getChanceOfRead(), 
-	        									  params.getChanceOfInsert(),
-	        									  params.getChanceOfUpdate(),
-	        									  params.getChanceOfBalanceTransfer(),
-	        									  params.getChanceOfLogRead(),
-	        									  params.getChanceOfLogInsert(),
-	        									  params.getMaxTransactionSize(),
-	        									  params.getMinTransactionSize(),
-	        									  params.COMPENSATE_PROB,
-	        									  batchSize, 
-	        									  params.getMillisBetweenActions());
+	        runnerService.setContendedRecords(contendedRecords);
+	        runnerService.setChances(params.getChanceOfRead(), params.getChanceOfInsert(),
+					  					params.getChanceOfUpdate(), params.getChanceOfBalanceTransfer(),
+					  						params.getChanceOfLogRead(), params.getChanceOfLogInsert());
+	        runnerService.setRemaining(params.getMaxTransactionSize(), params.getMinTransactionSize(),
+	        									  params.COMPENSATE_PROB, batchSize, params.getMillisBetweenActions());
+					  
 	        
-	        //workTimeMillis = runnerService.doWork();
+	        workTimeMillis = runnerService.doWork();
+	        measurement.setTimeTaken(workTimeMillis);
 	        //GET OUT! No need to do any other work!
-	        return null;
-		}
-		
-			
-		//Set up the relevant DBMaching to store connection and do work.	
-		if (params.getDbType() == DBTypes.FOUNDATIONDB){
-			machine = new FoundationDB(new FoundationConnection());
-			
-		}else if (params.getDbType() == DBTypes.FOUNDATIONDB_NO_RETRY){
-			machine = new FoundationDBNoRetry(new FoundationConnection());		
-		
-		}else if (params.getDbType() == DBTypes.MONGODB){
-			machine = new Mongo(new MongoConnection());
-			
-		}else if (params.getDbType() == DBTypes.TOKUMX){
-			machine = new TokuMX(new MongoConnection());
-			
-		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS){
-			machine = new TokuMXTransactional(new MongoConnection());	
-			
-		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_MVCC)	{
-			machine = new TokuMXTransactionalMVCC(new MongoConnection());
-			
-		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_SERIALIABLE)	{
-			machine = new TokuMXTransactionalSerializable(new MongoConnection());
+	        return measurement;
 		}
 		
 		if (machine == null){
 			System.out.println("Something is wrong.  No DBMachine was set");
-			return null;
 		}
 		
-		//ensure there  are no recorded errors!
-		measurement.setErrorCount(0);
+		//Do the work get the measurements
 		init();
 		for (int i = 0 ; i < batchSize;i++){
-			record = workload(machine);
+			record = workload(machine, measurement);
+			
+	    	if ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )
+	    		measurement.incrementErrorCount();
+			
+	    	if(record.isSuccess())
+	    			measurement.incrementgetSuccessful();	
+	    	
+	    	measurement.incrementCallNumber();
 		}
 		fini();
-		
-    	//Check for success
-    	if ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )
-    		measurement.incrementErrorCount();
+    	measurement.setTimeTaken( getFiniTimeMillis() - getInitTimeMillis());
     	
-    	
-    	
-    	workTimeMillis = getFiniTimeMillis() - getInitTimeMillis();
-    	machine = null;
-		return null;
+		return measurement;
 	}
 	
-    private ActionRecord workload(DBMachine machine) {
+    private ActionRecord workload(DBMachine machine, Measusement measurement) {
     	ActionRecord record = new ActionRecord();
     	
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
