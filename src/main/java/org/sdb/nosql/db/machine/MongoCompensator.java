@@ -19,7 +19,7 @@ public class MongoCompensator extends Mongo {
 
 	private int compensateProbability = 0;
 	
-	public MongoCompensator(MongoConnection connection, CounterService counterService) {
+	public MongoCompensator(MongoConnection connection) {
 		super(connection);
 	}
 

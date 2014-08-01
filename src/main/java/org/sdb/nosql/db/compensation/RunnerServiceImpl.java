@@ -25,13 +25,9 @@ public class RunnerServiceImpl implements RunnerService {
 
 	private Random rand = new Random(System.currentTimeMillis());
 
-	private List<String>  availibleKeys;
+	private List<String>  availibleKeys;	
 	
-	@Inject
-	private CounterService counterService;
-	
-	
-	private MongoCompensator machine = new MongoCompensator(new MongoConnection(), counterService);
+	private MongoCompensator machine = new MongoCompensator(new MongoConnection());
 	
 	private int chanceOfRead, chanceOfInsert, chanceOfUpdate,
 					chanceOfBalanceTransfer, chanceOfLogRead, chanceOfLogInsert;

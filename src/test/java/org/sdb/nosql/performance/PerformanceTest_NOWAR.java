@@ -39,22 +39,24 @@ public class PerformanceTest_NOWAR {
 
 	// Test parameters
 	private WorkerParameters params = 
-			new WorkerParameters(DBTypes.TOKUMX_TRANS_SERIALIABLE, // DBType
+			new WorkerParameters(DBTypes.FOUNDATIONDB_NO_RETRY, // DBType
 								false, // Compensatory?
 								10, // Thread Count
 								60000, // Number of Calls
-								100, // Batch Size
+								50, // Batch Size
 								2 // Contended Records
 	);
 
+	private long millisToRun = 900000;
+	
 	private void setTestParams() {
 
 		params.setChanceOfRead(0);
 		params.setChanceOfInsert(0);
 		params.setChanceOfUpdate(0);
-		params.setChanceOfBalanceTransfer(10000);
-		params.setChanceOfLogRead(0);
-		params.setChanceOfLogInsert(0);
+		params.setChanceOfBalanceTransfer(0);
+		params.setChanceOfLogRead(1);
+		params.setChanceOfLogInsert(999);
 
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
@@ -84,9 +86,9 @@ public class PerformanceTest_NOWAR {
 	public void perf() throws Exception {
 		System.out.println("***************************");
 		System.out.println("PERFORMANCE TEST");
-		System.out.println("Threads:    " + params.getThreadCount());
-		System.out.println("Batch size: " + params.getBatchSize());
-		System.out.println("Calls:      " + params.getNumberOfCalls());
+		System.out.println("Threads:       " + params.getThreadCount());
+		System.out.println("Batch size:    " + params.getBatchSize());
+		System.out.println("Millis to run: " + millisToRun);
 		System.out.println("***************************");
 
 		// Pre-test
@@ -108,7 +110,7 @@ public class PerformanceTest_NOWAR {
 		//Setup some threads
 		LinkedList<ClientThread> threads = new LinkedList<ClientThread>();
 		for (int i = 0; i < params.getThreadCount(); i++) {
-			ClientThread clientThread = new ClientThread(contendedKeys,params,10000);
+			ClientThread clientThread = new ClientThread(contendedKeys,params,millisToRun);
 			threads.add(clientThread);
 			clientThread.start();
 		}
