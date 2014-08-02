@@ -62,9 +62,9 @@ public class HotelServiceService extends Service {
     }
 
     @WebEndpoint(name = "HotelService")
-    public RunnerService getHotelService() {
+    public RunnerServiceBroken getHotelService() {
 
-        return super.getPort(new QName("http://www.jboss.org/jbosstm/xts/quickstarts/compensationsApi/travel", "HotelService"), RunnerService.class);
+        return super.getPort(new QName("http://www.jboss.org/jbosstm/xts/quickstarts/compensationsApi/travel", "HotelService"), RunnerServiceBroken.class);
     }
 
 }

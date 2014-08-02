@@ -39,9 +39,9 @@ public class PerformanceTest_NOWAR {
 
 	// Test parameters
 	private WorkerParameters params = 
-			new WorkerParameters(DBTypes.FOUNDATIONDB_NO_RETRY, // DBType
+			new WorkerParameters(DBTypes.TOKUMX_TRANS_MVCC, // DBType
 								false, // Compensatory?
-								10, // Thread Count
+								150, // Thread Count
 								60000, // Number of Calls
 								50, // Batch Size
 								2 // Contended Records

@@ -62,6 +62,7 @@ public class DBWorker{
 	private WorkerParameters params;
 	
 	private DBMachine machine;
+	private RunnerService runnerService;
 	
 	//Construct using a list of contended records and the parameters for running the test. 
 	public DBWorker(List<String> contendedRecords, WorkerParameters params){
@@ -70,7 +71,12 @@ public class DBWorker{
 		this.params = params;
 		
 		//Set up the relevant DBMaching to store connection and do work.	
-		if (params.getDbType() == DBTypes.FOUNDATIONDB){
+		if (params.isCompensator()){
+			
+			runnerService = createWebServiceClient();
+			runnerService.setCollections();
+					 
+		}else if (params.getDbType() == DBTypes.FOUNDATIONDB){
 			this.machine = new FoundationDB(new FoundationConnection());
 			
 		}else if (params.getDbType() == DBTypes.FOUNDATIONDB_NO_RETRY){
@@ -91,7 +97,7 @@ public class DBWorker{
 		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_SERIALIABLE)	{
 			this.machine = new TokuMXTransactionalSerializable(new MongoConnection());
 		}
-		
+
 	}
 
 
@@ -104,17 +110,17 @@ public class DBWorker{
 		//Call the doWork of the RunnerService and bug out!
 		if (params.isCompensator()){
 			
-			
-	        RunnerService runnerService = createWebServiceClient();
+			/*
+	        RunnerServiceBroken runnerService = createWebServiceClient();
 	        runnerService.setContendedRecords(contendedRecords);
 	        runnerService.setChances(params.getChanceOfRead(), params.getChanceOfInsert(),
 					  					params.getChanceOfUpdate(), params.getChanceOfBalanceTransfer(),
 					  						params.getChanceOfLogRead(), params.getChanceOfLogInsert());
 	        runnerService.setRemaining(params.getMaxTransactionSize(), params.getMinTransactionSize(),
 	        									  params.COMPENSATE_PROB, batchSize, params.getMillisBetweenActions());
-					  
+			*/		  
 	        
-	        workTimeMillis = runnerService.doWork();
+	        workTimeMillis = runnerService.run(2, 5, 0);
 	        measurement.setTimeTaken(workTimeMillis);
 	        //GET OUT! No need to do any other work!
 	        return measurement;

@@ -68,8 +68,8 @@ public class PerformanceTest {
 			new WorkerParameters(DBTypes.TOKUMX, // DBType
 								true, // Compensatory?
 								10, // Thread Count
-								60000, // Number of Calls
-								100, // Batch Size
+								10, // Number of Calls
+								10, // Batch Size
 								2 // Contended Records
 	);
 
