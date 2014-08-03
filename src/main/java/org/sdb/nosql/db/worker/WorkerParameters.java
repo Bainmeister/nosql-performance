@@ -7,7 +7,6 @@ public class WorkerParameters {
 	private final int dbType;
 	private final boolean isCompensator;
 	private final int threadCount;
-	private final int numberOfCalls;
 	private final int batchSize;
 	private final int contendedRecords; 
 	
@@ -31,11 +30,10 @@ public class WorkerParameters {
 
 	
 
-	public WorkerParameters(int dbType, boolean isCompensator, int threadCount, int numberOfCalls, int batchSize, int contendedRecords){
+	public WorkerParameters(int dbType, boolean isCompensator, int threadCount, int batchSize, int contendedRecords){
 		this.dbType = dbType;
 		this.isCompensator = isCompensator;
 		this.threadCount = threadCount;
-		this.numberOfCalls = numberOfCalls;
 		this.batchSize = batchSize;
 		this.contendedRecords = contendedRecords; 
 	}
@@ -132,12 +130,6 @@ public class WorkerParameters {
 		return threadCount;
 	}
 
-	/**
-	 * @return the numberOfCalls
-	 */
-	public int getNumberOfCalls() {
-		return numberOfCalls;
-	}
 
 	/**
 	 * @return the batchSize

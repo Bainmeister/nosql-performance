@@ -23,9 +23,14 @@ package org.sdb.nosql.performance;
 ///import io.narayana.perf.WorkerWorkload;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.KeyStore;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.xml.namespace.QName;
+import javax.xml.ws.Service;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -40,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.sdb.nosql.db.compensation.CounterService;
+import org.sdb.nosql.db.compensation.javax.RunnerService;
 import org.sdb.nosql.db.connection.DBConnection;
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
@@ -55,18 +61,15 @@ import com.foundationdb.Database;
 
 @RunWith(Arquillian.class)
 public class PerformanceTest {
+	
+	
+	private boolean isCompensator = false;
+	private int dbType = DBTypes.TOKUMX;
+	private int threadCount = 150;
+	private int batchSize = 50;
+	private int contendedRecordNum = 2;
 
-	// Test parameters
-	private WorkerParameters params = 
-			new WorkerParameters(DBTypes.TOKUMX, // DBType
-								true, // Compensatory?
-								150, // Thread Count
-								10, // Number of Calls
-								50, // Batch Size
-								2 // Contended Records
-	);
-
-	long runTime = 900000;
+	long runTime = 1000;
 	
 	private void setTestParams() {
 
@@ -84,6 +87,17 @@ public class PerformanceTest {
 		params.setLogReadLimit(1000);
 	}
 
+	// Test parameters
+	private WorkerParameters params = 
+			new WorkerParameters(dbType, // DBType
+								isCompensator, // Compensatory?
+								threadCount, // Thread Count
+								batchSize, // Batch Size
+								2 // Contended Records
+	);
+	
+	private List<String> contendedKeys = null;
+	
 	@Deployment
 	public static WebArchive createTestArchive() {
 
@@ -138,12 +152,10 @@ public class PerformanceTest {
 		System.out.println("PERFORMANCE TEST");
 		System.out.println("Threads:    " + params.getThreadCount());
 		System.out.println("Batch size: " + params.getBatchSize());
-		System.out.println("Calls:      " + params.getNumberOfCalls());
 		System.out.println("***************************");
 
 		// Pre-test
 		setTestParams();
-		List<String> contendedKeys = null;
 
 		// 1) Connect to the DB and grab some keys
 		int dbType = params.getDbType();
@@ -227,11 +239,43 @@ public class PerformanceTest {
 		
 		@Override
 		public void run() {
-			DBWorker worker = new DBWorker(contendedKeys,params);
 			
-			while (System.currentTimeMillis() < startTime+ runTime){
+			//Set up the relevant DBMaching to store connection and do work.	
+			if (params.isCompensator()){
 				
-				Measurement m = worker.doWork(params.getBatchSize());
+				
+				//Parameter setting
+				RunnerService runnerService = createWebServiceClient();
+							
+				//runnerService.setCollections();
+
+				runnerService.setContendedRecords(this.contendedKeys);
+				
+				runnerService.setChances(params.getChanceOfRead(),
+											params.getChanceOfInsert(), params.getChanceOfUpdate(),
+											params.getChanceOfBalanceTransfer(),
+											params.getChanceOfLogRead(), params.getChanceOfLogInsert());
+				runnerService.setParams(params.getMaxTransactionSize(),
+											params.getMinTransactionSize(), params.COMPENSATE_PROB,
+											params.getBatchSize(), params.getMillisBetweenActions(), params.getLogReadLimit(),params.getContendedRecords());
+
+				
+				//Run the service
+				runnerService.run(runTime);
+				
+				//Collect some results
+				totalTime = runnerService.getTotalRunTime();
+				callsMade = runnerService.getNumberOfCalls();
+	
+			        
+				
+			
+			
+			}else{
+			
+				DBWorker worker = new DBWorker(contendedKeys,params);
+					
+				Measurement m = worker.doWork(runTime);
 				
 				totalErrors= totalErrors +m.getErrorCount();
 				totalTime = totalTime + m.getTimeTaken();
@@ -256,7 +300,27 @@ public class PerformanceTest {
 			return successful;
 		}
 		
+		private static RunnerService createWebServiceClient() {
+			
+			
+	        try {
+	            URL wsdlLocation = new URL("http://localhost:8080/test/HotelServiceService?wsdl");
+	            QName serviceName = new QName("http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel",
+	                    "HotelServiceService");
+	            QName portName = new QName("http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel",
+	                    "HotelService");
+	
+	            Service service = Service.create(wsdlLocation, serviceName);
+	            return service.getPort(portName, RunnerService.class);
+	        } catch (MalformedURLException e) {
+	            throw new RuntimeException("Error creating Web Service client", e);
+	        }
+		}
+	    
+			
+		
 	}
+	
 
 }
 

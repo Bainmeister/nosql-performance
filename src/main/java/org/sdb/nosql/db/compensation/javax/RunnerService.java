@@ -14,20 +14,22 @@ import com.mongodb.DBCollection;
  */
 @WebService(name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
 public interface RunnerService{
-    
-    void setCollections();
-    
+       
     void setContendedRecords(List<String> availibleKeys);
     
 	void setChances(int chanceOfRead, int chanceOfInsert, int chanceOfUpdate,
 			int chanceOfBalanceTransfer, int chanceOfLogRead,
 			int chanceOfLogInsert);
 	
-	void setParams(int maxTransactionSize, int minTransactionSize,
-			double compensateProbability, int batchSize, int millisBetween, int logReadLimit);
-
-	long run();
+	void run(long runTime);
     
+	long getTotalRunTime();
+	
+	long getNumberOfCalls();
+
+	void setParams(int maxTransactionSize, int minTransactionSize,
+			double compensateProbability, int batchSize, int millisBetween,
+			int logReadLimit, int contendedRecords);
 
     
 }
