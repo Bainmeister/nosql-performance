@@ -20,7 +20,6 @@
  */
 package org.sdb.nosql.performance;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -32,7 +31,7 @@ import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.keys.generation.KeyGen;
 import org.sdb.nosql.db.worker.DBTypes;
 import org.sdb.nosql.db.worker.DBWorker;
-import org.sdb.nosql.db.worker.Measusement;
+import org.sdb.nosql.db.worker.Measurement;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 public class PerformanceTest_NOWAR {
@@ -180,7 +179,7 @@ public class PerformanceTest_NOWAR {
 			DBWorker worker = new DBWorker(contendedKeys,params);
 			
 			while (System.currentTimeMillis() < startTime+ runTime){
-				Measusement m = worker.doWork(params.getBatchSize());
+				Measurement m = worker.doWork(params.getBatchSize());
 				totalErrors= totalErrors +m.getErrorCount();
 				totalTime = totalTime + m.getTimeTaken();
 				successful =  successful + m.getSuccessful();

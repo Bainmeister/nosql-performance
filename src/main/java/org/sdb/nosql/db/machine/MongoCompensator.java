@@ -10,9 +10,6 @@ import org.sdb.nosql.db.compensation.CounterService;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
 
-import com.mongodb.DBCollection;
-
-
 public class MongoCompensator extends Mongo {
 
 	private AtomicInteger compensations = new AtomicInteger(0);
@@ -35,7 +32,7 @@ public class MongoCompensator extends Mongo {
 		ActionRecord record = new ActionRecord();	
 		
 		try {
-			counterService.updateCounters( key1, key2, amount, compensateProbability, collection);
+			counterService.updateCounters( key1, key2, amount, compensateProbability, collection, waitMillis);
 		} catch (TransactionCompensatedException e) {
 			compensations.incrementAndGet();
 		}
@@ -47,11 +44,13 @@ public class MongoCompensator extends Mongo {
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
 		try {
-			counterService.update(keys, compensateProbability, collection);
+			counterService.update(keys, compensateProbability, collection, waitMillis);
 		} catch (TransactionCompensatedException e) {
 			compensations.incrementAndGet();
 		}
 		return record;
 	}
+	
+	
 
 }

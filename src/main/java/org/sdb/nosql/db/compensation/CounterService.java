@@ -6,8 +6,11 @@ import org.jboss.narayana.compensations.api.CompensationManager;
 import com.mongodb.DBCollection;
 
 import javax.inject.Inject;
+
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This service is responsible for transferring money from one account to another.
@@ -22,29 +25,14 @@ public class CounterService {
     CounterManager counterManager;
 
     @Inject
-    CompensationManager compensationManager;
+    CompensationManager compensationManager;   
 
-    @Compensatable
-    public void updateCounters(int counter1, int counter2, int amount, double compensateProbability, DBCollection col) {
-
-        counterManager.incrimentCounter(counter2, amount,col);
-        counterManager.decrementCounter(counter1, amount,col);
-
-        if (rand.nextDouble() <= compensateProbability) {
-            compensationManager.setCompensateOnly();
-        }
-    }
-    
-    public void cry(){
-    	System.out.println("WAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-    }
-    
-    
     @Compensatable
 	public void updateCounters(String string, String string2, int amount,
-			double compensateProbability, DBCollection col) {
+			double compensateProbability, DBCollection col, int waitMillis) {
     	
     	counterManager.incrimentCounter(string, amount, col );
+    	waitBetweenActions(waitMillis);
         counterManager.decrementCounter(string2, amount,col );
 
         if (rand.nextDouble() <= compensateProbability) {
@@ -54,16 +42,29 @@ public class CounterService {
 	}
     
     @Compensatable
-	public void update(List<String> keys, int compensateProbability,
-			DBCollection collection) {
-		
+	public void update(List<String> keys, double compensateProbability,
+			DBCollection collection, int waitMillis) {
+    	
     	for (String key : keys){
-    		counterManager.incrimentCounter(key, 1, collection );
+    		counterManager.incrimentCounter(key, 10, collection );
+    		waitBetweenActions(waitMillis);
     		
             if (rand.nextDouble() <= compensateProbability) {
                 compensationManager.setCompensateOnly();
             }
     	}
     	
+	}
+    
+	public void waitBetweenActions(int millis) {
+		
+		if (ThreadLocalRandom.current().nextInt(2)==1 ){
+			try {
+				TimeUnit.MILLISECONDS.sleep(millis);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	
 	}
 }

@@ -30,9 +30,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
-import io.narayana.perf.Result;
-import io.narayana.perf.Worker;
-
 import org.sdb.nosql.db.compensation.javax.RunnerService;
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
@@ -42,6 +39,7 @@ import org.sdb.nosql.db.machine.FoundationDBNoRetry;
 import org.sdb.nosql.db.machine.Mongo;
 import org.sdb.nosql.db.machine.TokuMX;
 import org.sdb.nosql.db.machine.TokuMXTransactional;
+import org.sdb.nosql.db.machine.TokuMXTransactionalBestOfBoth;
 import org.sdb.nosql.db.machine.TokuMXTransactionalMVCC;
 import org.sdb.nosql.db.machine.TokuMXTransactionalSerializable;
 import org.sdb.nosql.db.performance.ActionRecord;
@@ -74,8 +72,21 @@ public class DBWorker{
 		if (params.isCompensator()){
 			
 			runnerService = createWebServiceClient();
+						
 			runnerService.setCollections();
-					 
+
+			
+			runnerService.setContendedRecords(contendedRecords);
+			
+			runnerService.setChances(params.getChanceOfRead(),
+										params.getChanceOfInsert(), params.getChanceOfUpdate(),
+										params.getChanceOfBalanceTransfer(),
+										params.getChanceOfLogRead(), params.getChanceOfLogInsert());
+			runnerService.setParams(params.getMaxTransactionSize(),
+										params.getMinTransactionSize(), params.COMPENSATE_PROB,
+										params.getBatchSize(), params.getMillisBetweenActions(), params.getLogReadLimit());
+
+	
 		}else if (params.getDbType() == DBTypes.FOUNDATIONDB){
 			this.machine = new FoundationDB(new FoundationConnection());
 			
@@ -96,34 +107,30 @@ public class DBWorker{
 			
 		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_SERIALIABLE)	{
 			this.machine = new TokuMXTransactionalSerializable(new MongoConnection());
+		}else if (params.getDbType() == DBTypes.TOKUMX_TRANS_BoB)	{
+			this.machine = new TokuMXTransactionalBestOfBoth(new MongoConnection());
 		}
 
 	}
 
 
-	public Measusement doWork(int batchSize) {
+	public Measurement doWork(int batchSize) {
 		
-		Measusement measurement = new Measusement();
+		Measurement measurement = new Measurement();
 			
 		ActionRecord record = null;
 		
 		//Call the doWork of the RunnerService and bug out!
 		if (params.isCompensator()){
 			
-			/*
-	        RunnerServiceBroken runnerService = createWebServiceClient();
-	        runnerService.setContendedRecords(contendedRecords);
-	        runnerService.setChances(params.getChanceOfRead(), params.getChanceOfInsert(),
-					  					params.getChanceOfUpdate(), params.getChanceOfBalanceTransfer(),
-					  						params.getChanceOfLogRead(), params.getChanceOfLogInsert());
-	        runnerService.setRemaining(params.getMaxTransactionSize(), params.getMinTransactionSize(),
-	        									  params.COMPENSATE_PROB, batchSize, params.getMillisBetweenActions());
-			*/		  
-	        
-	        workTimeMillis = runnerService.run(2, 5, 0);
-	        measurement.setTimeTaken(workTimeMillis);
-	        //GET OUT! No need to do any other work!
-	        return measurement;
+			
+			Measurement m = new Measurement();
+			long timeTaken = runnerService.run();
+			
+			m.addToMeasuement(params.getBatchSize(), 0, 0, timeTaken);
+			
+			System.out.println("Time Taken" + m.getTimeTaken());
+	        return m;//runnerService.run(new Measurement());
 		}
 		
 		if (machine == null){
@@ -131,25 +138,25 @@ public class DBWorker{
 		}
 		
 		//Do the work get the measurements
-		init();
 		for (int i = 0 ; i < batchSize;i++){
+			
+			//////////////RUN THE WORKLOAD///////////////////
+			long startTimeMillis = System.currentTimeMillis();
 			record = workload(machine, measurement);
+			long endTimeMillis = System.currentTimeMillis();
+			//////////////RUN THE WORKLOAD///////////////////
 			
-	    	if ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )
-	    		measurement.incrementErrorCount();
-			
-	    	if(record.isSuccess())
-	    			measurement.incrementgetSuccessful();	
+			boolean success = (record.isSuccess())?true:false;
+			boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? false:true ;
+	    	measurement.addToMeasuement(1, success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
 	    	
-	    	measurement.incrementCallNumber();
 		}
-		fini();
-    	measurement.setTimeTaken( getFiniTimeMillis() - getInitTimeMillis());
+    //	measurement.setTimeTaken( getFiniTimeMillis() - getInitTimeMillis());
     	
 		return measurement;
 	}
 	
-    private ActionRecord workload(DBMachine machine, Measusement measurement) {
+    private ActionRecord workload(DBMachine machine, Measurement measurement) {
     	ActionRecord record = new ActionRecord();
     	
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
@@ -172,7 +179,7 @@ public class DBWorker{
     		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
     	
     	}else if (rand1 < params.getChanceOfLogRead()){
-    		record = machine.logRead(params.getMillisBetweenActions());
+    		record = machine.logRead(params.getMillisBetweenActions(), params.getLogReadLimit());
     		
     	}else if (rand1 < params.getChanceOfLogInsert()){
     		record = machine.logInsert( params.getMillisBetweenActions());

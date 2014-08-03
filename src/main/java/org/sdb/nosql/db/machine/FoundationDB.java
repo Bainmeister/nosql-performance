@@ -67,12 +67,7 @@ public class FoundationDB implements DBMachine {
 				for (String key : keys) {
 					decodeInt(tr.get(Tuple.from("value", key).pack()).get());
 
-					try {
-						Thread.sleep(waitMillis);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					waitBetweenActions(waitMillis);
 
 				}
 
@@ -104,6 +99,7 @@ public class FoundationDB implements DBMachine {
 
 					tr.set(Tuple.from("value", processNum + "_" + i).pack(),
 							encodeInt(0));
+					
 					waitBetweenActions(waitMillis);
 
 				}
@@ -174,7 +170,7 @@ public class FoundationDB implements DBMachine {
 
 	}
 
-	public ActionRecord logRead(int waitMillis) {
+	public ActionRecord logRead(final int waitMillis, final int limit) {
 		final ActionRecord record = new ActionRecord();
 
 		// FDB API
@@ -185,10 +181,19 @@ public class FoundationDB implements DBMachine {
 
 				record.setAttemptsTaken(record.getAttemptsTaken() + 1);
 				
-				tr.getRange(Tuple.from("log1").range(),1000);
-				tr.getRange(Tuple.from("log2").range(),1000);
-				tr.getRange(Tuple.from("log3").range(),1000);
-
+				if (limit <=0 ){
+					tr.getRange(Tuple.from("log1").range());
+					waitBetweenActions(waitMillis);
+					tr.getRange(Tuple.from("log2").range());
+					waitBetweenActions(waitMillis);
+					tr.getRange(Tuple.from("log3").range());
+				}else{
+					tr.getRange(Tuple.from("log1").range(),limit);
+					waitBetweenActions(waitMillis);
+					tr.getRange(Tuple.from("log2").range(),limit);
+					waitBetweenActions(waitMillis);
+					tr.getRange(Tuple.from("log3").range(),limit);
+				}
 				return record;
 			}
 			// END TRANSACTION *********************/
@@ -215,9 +220,13 @@ public class FoundationDB implements DBMachine {
 				tr.set(Tuple.from("log1", processNum).pack(),
 						encodeInt(0));
 				waitBetweenActions(waitMillis);
+				
+				waitBetweenActions(waitMillis);
 
 				tr.set(Tuple.from("log2", processNum).pack(),
 						encodeInt(0));
+				waitBetweenActions(waitMillis);
+				
 				waitBetweenActions(waitMillis);
 
 				tr.set(Tuple.from("log3", processNum).pack(),

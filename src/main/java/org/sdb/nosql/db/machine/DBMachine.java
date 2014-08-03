@@ -71,12 +71,12 @@ public interface DBMachine {
 	ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis);
 	
 	/**
-	 * Read from the logs
-	 * @param numberToRead
+	 * Read from the logs.  If limit > 0, then only that amount will be read otherwise all records are retrived.  
+	 * @param limit
 	 * @param waitMillis
 	 * @return
 	 */
-	ActionRecord logRead(int waitMillis);
+	ActionRecord logRead(int waitMillis, int limit);
 	
 	/**
 	 * Write to the logs

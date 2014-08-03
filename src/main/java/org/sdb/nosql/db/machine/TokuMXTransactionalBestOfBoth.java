@@ -9,12 +9,19 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 
-public class TokuMXTransactionalSerializable extends TokuMXTransactional {
+public class TokuMXTransactionalBestOfBoth extends TokuMXTransactional {
 
-	public TokuMXTransactionalSerializable(MongoConnection connection) {
+	public TokuMXTransactionalBestOfBoth(MongoConnection connection) {
 		super(connection);
 	}
 
+	// Updates will be Serializable, anything else will be MVCC as standard
+	@Override
+	BasicDBObject beginTransaction() {
+		return beginTransaction("MVCC");
+	}
+	
+	
 	//Updates work differently, as we need to lock records manually
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
@@ -26,7 +33,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 			db.requestEnsureConnection();
 			try {
 
-				db.command(beginTransaction());
+				db.command(beginTransaction("serializable"));
 
 				// Lock the records
 				for (String key : keys)
@@ -93,7 +100,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 			// ***** TRANSACTION****//
 			try {
 				
-				db.command(beginTransaction());
+				db.command(beginTransaction("serializable"));
 				// Lock the records
 				
 				// Lock the records by reading them.
@@ -137,11 +144,9 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 		}
 		return record;
 	}
-
-	//Explicitly issue a serializable transaction
-	@Override
-	BasicDBObject beginTransaction() {
-		return beginTransaction("serializable");
-	}
+	
+	
+	
+	
 
 }

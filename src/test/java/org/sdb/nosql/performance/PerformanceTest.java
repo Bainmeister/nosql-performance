@@ -20,19 +20,15 @@
  */
 package org.sdb.nosql.performance;
 
-import io.narayana.perf.WorkerWorkload;
+///import io.narayana.perf.WorkerWorkload;
 
 import java.io.File;
 import java.security.KeyStore;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.inject.Inject;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.narayana.compensations.api.TransactionCompensatedException;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
@@ -43,22 +39,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.sdb.nosql.db.compensation.CounterService;
 import org.sdb.nosql.db.connection.DBConnection;
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.keys.generation.KeyGen;
 import org.sdb.nosql.db.machine.DBMachine;
-import org.sdb.nosql.db.machine.Mongo;
 import org.sdb.nosql.db.performance.ActionRecord;
 import org.sdb.nosql.db.worker.DBTypes;
 import org.sdb.nosql.db.worker.DBWorker;
-import org.sdb.nosql.db.worker.Measusement;
+import org.sdb.nosql.db.worker.Measurement;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.foundationdb.Database;
-import com.mongodb.DBCollection;
 
 @RunWith(Arquillian.class)
 public class PerformanceTest {
@@ -67,26 +60,28 @@ public class PerformanceTest {
 	private WorkerParameters params = 
 			new WorkerParameters(DBTypes.TOKUMX, // DBType
 								true, // Compensatory?
-								10, // Thread Count
+								150, // Thread Count
 								10, // Number of Calls
-								10, // Batch Size
+								50, // Batch Size
 								2 // Contended Records
 	);
 
-	long runTime =1000;
+	long runTime = 900000;
 	
 	private void setTestParams() {
 
-		params.setChanceOfRead(0);
-		params.setChanceOfInsert(0);
+		params.setChanceOfRead(1);
+		params.setChanceOfInsert(999);
 		params.setChanceOfUpdate(0);
-		params.setChanceOfBalanceTransfer(10000);
+		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
 		params.setChanceOfLogInsert(0);
 
 		params.setMaxTransactionSize(2);
 		params.setMinTransactionSize(2);
 		params.setMillisBetweenActions(0);
+	
+		params.setLogReadLimit(1000);
 	}
 
 	@Deployment
@@ -103,7 +98,6 @@ public class PerformanceTest {
 								KeyGen.class.getPackage().getName(),
 								KeyStore.class.getPackage().getName(),
 								DBMachine.class.getPackage().getName(),
-								WorkerWorkload.class.getPackage().getName(),
 								Database.class.getPackage().getName(),
 								InitializeAndCheckMongo.class.getPackage().getName())
 				.addAsManifestResource("services/javax.enterprise.inject.spi.Extension")
@@ -236,7 +230,9 @@ public class PerformanceTest {
 			DBWorker worker = new DBWorker(contendedKeys,params);
 			
 			while (System.currentTimeMillis() < startTime+ runTime){
-				Measusement m = worker.doWork(params.getBatchSize());
+				
+				Measurement m = worker.doWork(params.getBatchSize());
+				
 				totalErrors= totalErrors +m.getErrorCount();
 				totalTime = totalTime + m.getTimeTaken();
 				successful =  successful + m.getSuccessful();

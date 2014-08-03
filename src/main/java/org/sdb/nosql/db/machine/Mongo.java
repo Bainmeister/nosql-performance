@@ -40,8 +40,10 @@ public class Mongo implements DBMachine {
 	public ActionRecord read(List<String> keys, int waitMillis) {
 		
 		final ActionRecord record = new ActionRecord();
-		for (String key : keys)
+		for (String key : keys){
 			collection.findOne(new BasicDBObject("name",key));
+			waitBetweenActions(waitMillis);
+		}
 
 		return record;
 	}
@@ -59,6 +61,8 @@ public class Mongo implements DBMachine {
 		for (int i = 1; i < numberToAdd + 1; i++) {
 			collection.insert(new BasicDBObject("name", processNum + "_"
 					+ String.valueOf(i)).append("value", 0).append("tx", 0));
+			
+			waitBetweenActions(waitMillis);
 		}
 
 		return record;
@@ -76,9 +80,6 @@ public class Mongo implements DBMachine {
 
 			collection.update(searchQuery, newDocument);
 
-			// Wait for millis
-			if (waitMillis > 0)
-				;
 			waitBetweenActions(waitMillis);
 		}
 
@@ -113,10 +114,11 @@ public class Mongo implements DBMachine {
 		try {
 
 			WriteResult write1 = collection.update(query1, set1); // Update
-																	// record 1
+																	
 			waitBetweenActions(waitMillis); // Delay
+			
 			WriteResult write2 = collection.update(query2, set2); // Update
-																	// record 2
+																	
 
 			updateSucceeded = (write1.getN() == 0) || (write2.getN() == 0) ? false
 					: true;
@@ -130,12 +132,23 @@ public class Mongo implements DBMachine {
 		return record;
 	}
 
-	public ActionRecord logRead(int waitMillis) {
+	public ActionRecord logRead(int waitMillis, int limit) {
 
 		ActionRecord record = new ActionRecord();
-		log1.find().limit(1000);
-		log2.find().limit(1000);
-		log3.find().limit(1000);
+		
+		if(limit>0){
+			log1.find().limit(limit);
+			waitBetweenActions(waitMillis);
+			log2.find().limit(limit);
+			waitBetweenActions(waitMillis);
+			log3.find().limit(limit);
+		}else{
+			log1.find();
+			waitBetweenActions(waitMillis);
+			log2.find();
+			waitBetweenActions(waitMillis);
+			log3.find();
+		}
 		
 		return record;
 	}
@@ -144,15 +157,16 @@ public class Mongo implements DBMachine {
 		ActionRecord record = new ActionRecord();
 
 		// Attempts to make a individual identifier - this may not be too accurate if
-		// there
-		// are loads of writes, but I'm not too bothered about this.
+		// there are loads of writes, but I'm not too bothered about this.
 		String processNum = System.currentTimeMillis() + "_"
 				+ ThreadLocalRandom.current().nextInt(10) + ""
 				+ ThreadLocalRandom.current().nextInt(10);
 		
 		
 		log1.insert(new BasicDBObject("info", processNum));
+		waitBetweenActions(waitMillis);
 		log2.insert(new BasicDBObject("info", processNum));
+		waitBetweenActions(waitMillis);
 		log3.insert(new BasicDBObject("info", processNum));
 
 

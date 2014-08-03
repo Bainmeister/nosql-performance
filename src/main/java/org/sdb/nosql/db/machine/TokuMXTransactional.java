@@ -177,7 +177,7 @@ public class TokuMXTransactional extends TokuMX {
 	}
 
 	@Override
-	public ActionRecord logRead(int waitMillis) {
+	public ActionRecord logRead(int waitMillis, int limit) {
 		ActionRecord record = new ActionRecord();
 	
 		
@@ -186,9 +186,19 @@ public class TokuMXTransactional extends TokuMX {
 			db.command(beginTransaction());
 			
 			
-			log1.find().limit(1000);
-			log2.find().limit(1000);
-			log3.find().limit(1000);
+			if(limit>0){
+				log1.find().limit(limit);
+				waitBetweenActions(waitMillis);
+				log2.find().limit(limit);
+				waitBetweenActions(waitMillis);
+				log3.find().limit(limit);
+			}else{
+				log1.find();
+				waitBetweenActions(waitMillis);
+				log2.find();
+				waitBetweenActions(waitMillis);
+				log3.find();
+			}
 			
 			db.command(rollbackTransaction());
 		}catch (MongoException e){
@@ -210,10 +220,6 @@ public class TokuMXTransactional extends TokuMX {
 				+ ThreadLocalRandom.current().nextInt(10) + ""
 				+ ThreadLocalRandom.current().nextInt(10);
 		
-		log1.insert(new BasicDBObject("info", processNum));
-		log2.insert(new BasicDBObject("info", processNum));
-		log3.insert(new BasicDBObject("info", processNum));
-		
 		db.requestStart();
 		try{
 			
@@ -225,7 +231,9 @@ public class TokuMXTransactional extends TokuMX {
 				boolean success =true;
 				
 				WriteResult write1 = log1.insert(new BasicDBObject("info", processNum));
+				waitBetweenActions(waitMillis);
 				WriteResult write2 = log2.insert(new BasicDBObject("info", processNum));
+				waitBetweenActions(waitMillis);
 				WriteResult write3 = log3.insert(new BasicDBObject("info", processNum));
 				
 				if (write1.getN()==0||write2.getN()==0||write3.getN()==0)

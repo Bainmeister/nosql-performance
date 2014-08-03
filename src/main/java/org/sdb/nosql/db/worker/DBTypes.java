@@ -14,5 +14,5 @@ public class DBTypes {
 	final public static int TOKUMX_TRANS = 31;
 	final public static int TOKUMX_TRANS_MVCC = 32;
 	final public static int TOKUMX_TRANS_SERIALIABLE = 33;
-	
+	final public static int TOKUMX_TRANS_BoB = 34;
 }

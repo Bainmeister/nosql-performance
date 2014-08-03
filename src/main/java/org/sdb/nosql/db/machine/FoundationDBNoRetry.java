@@ -17,6 +17,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 		// TODO Auto-generated constructor stub
 	}
 
+	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
 
 		final ActionRecord record = new ActionRecord();
@@ -29,6 +30,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 
 			for (String key : keys) {
 				decodeInt(tr1.get(Tuple.from("value", key).pack()).get());
+				waitBetweenActions(waitMillis);
 			}
 
 			// Commit the transaction!
@@ -47,7 +49,8 @@ public class FoundationDBNoRetry extends FoundationDB {
 
 		return record;
 	}
-
+	
+	@Override
 	public ActionRecord insert(int number, int waitMillis) {
 
 		final ActionRecord record = new ActionRecord();
@@ -87,6 +90,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 		return record;
 	}
 	
+	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
 
 		final ActionRecord record = new ActionRecord();
@@ -121,6 +125,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 		return record;
 	}
 
+	@Override
 	public ActionRecord balanceTransfer(final String key1, final String key2,
 			final int amount, final int waitMillis) {
 
@@ -161,7 +166,8 @@ public class FoundationDBNoRetry extends FoundationDB {
 		return record;
 	}
 
-	public ActionRecord logRead(int waitMillis) {
+	@Override
+	public ActionRecord logRead(int waitMillis, int limit) {
 
 		final ActionRecord record = new ActionRecord();
 
@@ -170,10 +176,19 @@ public class FoundationDBNoRetry extends FoundationDB {
 
 		// Do it via blocking (Map)
 		try {
-
-			tr1.getRange(Tuple.from("log1").range(),1000);
-			tr1.getRange(Tuple.from("log2").range(),1000);
-			tr1.getRange(Tuple.from("log3").range(),1000);
+			if (limit>0){
+				tr1.getRange(Tuple.from("log1").range(),limit);
+				waitBetweenActions(waitMillis);
+				tr1.getRange(Tuple.from("log2").range(),limit);
+				waitBetweenActions(waitMillis);
+				tr1.getRange(Tuple.from("log3").range(),limit);
+			}else{
+				tr1.getRange(Tuple.from("log1").range());
+				waitBetweenActions(waitMillis);
+				tr1.getRange(Tuple.from("log2").range());
+				waitBetweenActions(waitMillis);
+				tr1.getRange(Tuple.from("log3").range());
+			}
 
 			// Commit the transaction!
 			tr1.commit().get();
@@ -192,6 +207,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 		return record;
 	}
 
+	@Override
 	public ActionRecord logInsert(int waitMillis) {
 
 		final ActionRecord record = new ActionRecord();
@@ -216,7 +232,6 @@ public class FoundationDBNoRetry extends FoundationDB {
 
 			tr1.set(Tuple.from("log3", processNum).pack(),
 					encodeInt(0));
-			waitBetweenActions(waitMillis);
 			
 			// Commit the transaction!
 			tr1.commit().get();

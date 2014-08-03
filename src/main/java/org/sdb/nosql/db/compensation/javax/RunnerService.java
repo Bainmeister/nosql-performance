@@ -1,7 +1,11 @@
 package org.sdb.nosql.db.compensation.javax;
 
 
+import java.util.List;
+
 import javax.jws.WebService;
+
+import org.sdb.nosql.db.worker.Measurement;
 
 import com.mongodb.DBCollection;
 
@@ -10,9 +14,20 @@ import com.mongodb.DBCollection;
  */
 @WebService(name = "HotelService", targetNamespace = "http://www.jboss.org/as/quickstarts/compensationsApi/travel/hotel")
 public interface RunnerService{
-
-	public void setCollections();
+    
+    void setCollections();
+    
+    void setContendedRecords(List<String> availibleKeys);
+    
+	void setChances(int chanceOfRead, int chanceOfInsert, int chanceOfUpdate,
+			int chanceOfBalanceTransfer, int chanceOfLogRead,
+			int chanceOfLogInsert);
 	
-    public int run(int loops, int counters, double compensateProbability);
+	void setParams(int maxTransactionSize, int minTransactionSize,
+			double compensateProbability, int batchSize, int millisBetween, int logReadLimit);
 
+	long run();
+    
+
+    
 }

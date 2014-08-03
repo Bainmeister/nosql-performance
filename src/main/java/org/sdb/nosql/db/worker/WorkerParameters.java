@@ -25,8 +25,10 @@ public class WorkerParameters {
 	private int millisBetweenActions = 0;	
 		
 	private int writeToLogs = 0;
-
+	private  int LogReadLimit = 0;
+	
 	public  int COMPENSATE_PROB = 0;
+
 	
 
 	public WorkerParameters(int dbType, boolean isCompensator, int threadCount, int numberOfCalls, int batchSize, int contendedRecords){
@@ -204,6 +206,16 @@ public class WorkerParameters {
 
 	public void setChanceOfLogInsert(int chanceOfLogInsert) {
 		this.chanceOfLogInsert = chanceOfLogInsert;
+	}
+
+
+	public int getLogReadLimit() {
+		return LogReadLimit;
+	}
+
+
+	public void setLogReadLimit(int logReadLimit) {
+		LogReadLimit = logReadLimit;
 	}
 
 	
