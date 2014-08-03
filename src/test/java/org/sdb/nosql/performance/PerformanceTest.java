@@ -61,15 +61,18 @@ import com.foundationdb.Database;
 
 @RunWith(Arquillian.class)
 public class PerformanceTest {
-	
-	
-	private boolean isCompensator = false;
-	private int dbType = DBTypes.TOKUMX;
+		
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	long runTime = 900000;
 	private int threadCount = 150;
-	private int batchSize = 50;
-	private int contendedRecordNum = 2;
-
-	long runTime = 1000;
+	private int batchSize = 20;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
+	
+	private boolean isCompensator = true;
+	private int dbType = DBTypes.TOKUMX;
+	private int contendedRecordNum = 2;	
+	
 	
 	private void setTestParams() {
 
@@ -86,14 +89,18 @@ public class PerformanceTest {
 	
 		params.setLogReadLimit(1000);
 	}
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
 	// Test parameters
 	private WorkerParameters params = 
 			new WorkerParameters(dbType, // DBType
 								isCompensator, // Compensatory?
 								threadCount, // Thread Count
 								batchSize, // Batch Size
-								2 // Contended Records
+								contendedRecordNum // Contended Records
 	);
 	
 	private List<String> contendedKeys = null;
@@ -205,18 +212,21 @@ public class PerformanceTest {
 	@After
 	public void accountCheck() throws Exception {
 
-		int i = 0;
-		int dbType = params.getDbType();
-
-		if (dbType == DBTypes.FOUNDATIONDB
-				|| dbType == DBTypes.FOUNDATIONDB_NO_RETRY) {
-			i = InitializeAndCheckFDB.checkBalance();
-		} else {
-			i = InitializeAndCheckMongo.checkMongo();
+		
+		if (params.getChanceOfBalanceTransfer()>0){
+			int i = 0;
+			int dbType = params.getDbType();
+	
+			if (dbType == DBTypes.FOUNDATIONDB
+					|| dbType == DBTypes.FOUNDATIONDB_NO_RETRY) {
+				i = InitializeAndCheckFDB.checkBalance();
+			} else {
+				i = InitializeAndCheckMongo.checkMongo();
+			}
+	
+			System.out.println("Variance= " + i);
+			System.out.println("***************************");
 		}
-
-		System.out.println("Variance= " + i);
-		System.out.println("***************************");
 	}
 
 	private static class ClientThread extends Thread {

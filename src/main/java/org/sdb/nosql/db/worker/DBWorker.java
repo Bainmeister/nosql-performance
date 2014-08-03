@@ -116,7 +116,7 @@ public class DBWorker{
 				//////////////RUN THE WORKLOAD///////////////////
 				
 				boolean success = (record.isSuccess())?true:false;
-				boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? false:true ;
+				boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? true:false ;
 		    	measurement.addToMeasuement(1, success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
 		    	
 			}
