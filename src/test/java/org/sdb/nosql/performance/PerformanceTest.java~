@@ -67,10 +67,10 @@ public class PerformanceTest {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	long runTime = 900000;
 	private int threadCount = 150;
-	private int batchSize = 20;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
+	private int batchSize = 50;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
 	
 	private boolean isCompensator = false;
-	private int dbType = DBTypes.TOKUMX;
+	private int dbType = DBTypes.TOKUMX_TRANS_SERIALIABLE;
 	private int contendedRecordNum = 2;	
 	
 	
@@ -233,13 +233,14 @@ public class PerformanceTest {
 
 		private WorkerParameters params;
 		private List<String> contendedKeys;
-		private long startTime = System.currentTimeMillis();
 		private long runTime;
 		
 		private long totalErrors = 0;
 		private long totalTime = 0;
 		private long successful = 0;
 		private long callsMade = 0;
+		
+		private RunnerService runnerService;
 		
 		ClientThread(List<String> contendedKeys, WorkerParameters params, long runTime){
 			this.contendedKeys = contendedKeys;
@@ -250,15 +251,15 @@ public class PerformanceTest {
 		@Override
 		public void run() {
 			
-			//Set up the relevant DBMaching to store connection and do work.	
+			DBWorker worker= null;
+			
+			//Set up the DB worker
 			if (params.isCompensator()){
 				
 				
-				//Parameter setting
-				RunnerService runnerService = createWebServiceClient();
+				//The db worker is setup on the receiver in these next calls. 
+				runnerService = createWebServiceClient();
 							
-				//runnerService.setCollections();
-
 				runnerService.setContendedRecords(this.contendedKeys);
 				
 				runnerService.setChances(params.getChanceOfRead(),
@@ -269,28 +270,34 @@ public class PerformanceTest {
 											params.getMinTransactionSize(), params.COMPENSATE_PROB,
 											params.getBatchSize(), params.getMillisBetweenActions(), params.getLogReadLimit(),params.getContendedRecords());
 
-				
-				//Run the service
-				runnerService.run(runTime);
-				
-				//Collect some results
-				totalTime = runnerService.getTotalRunTime();
-				callsMade = runnerService.getNumberOfCalls();
-	
-			        
-				
-			
-			
 			}else{
+				 //Don't need to hook into Wildfly, so we can just setup a worker here. 
+				 worker = new DBWorker(contendedKeys,params);
+			}
 			
-				DBWorker worker = new DBWorker(contendedKeys,params);
+			
+			//Run the workload. This is where the real test happens.
+			long startTime = System.currentTimeMillis();
+			while (System.currentTimeMillis() < startTime+ runTime){
+				if (params.isCompensator()){
 					
-				Measurement m = worker.doWork(runTime);
+					//Run the service
+					runnerService.run();
+					
+					//Collect some results
+					totalTime = totalTime+ runnerService.getTotalRunTime();
+					callsMade = callsMade+ runnerService.getNumberOfCalls();
 				
-				totalErrors= totalErrors +m.getErrorCount();
-				totalTime = totalTime + m.getTimeTaken();
-				successful =  successful + m.getSuccessful();
-				callsMade = callsMade + m.getCallNumber();
+				
+				}else{
+									
+					Measurement m = worker.doWork();
+					
+					totalErrors= totalErrors + m.getErrorCount();
+					totalTime = totalTime + m.getTimeTaken();
+					successful =  successful + m.getSuccessful();
+					callsMade = callsMade + m.getCallNumber();
+				}
 			}
 		}
 		

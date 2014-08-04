@@ -37,7 +37,8 @@ public class RunnerServiceImpl implements RunnerService {
 
     private double compensateProbability;
 
- 
+    private WorkerParameters params;
+    private DBWorker worker;
 	private List<String> availibleKeys;
 	
 	private int chanceOfRead;
@@ -109,14 +110,10 @@ public class RunnerServiceImpl implements RunnerService {
 		this.batchSize = batchSize;
 		this.millisBetween = millisBetween;
 		this.logReadLimit = logReadLimit;
-	}
-
-	@Override
-	@WebMethod
-	public void run(long runTime) {
+		
 		
 		//Annoyingly have to recreate the parameter object on this side now. 
-		WorkerParameters params = new WorkerParameters(DBTypes.TOKUMX,true,0, batchSize, contendedRecords );
+		params = new WorkerParameters(DBTypes.TOKUMX,true,0, batchSize, contendedRecords );
 		params.setChanceOfRead(chanceOfRead);
 		params.setChanceOfInsert(chanceOfInsert);
 		params.setChanceOfUpdate(chanceOfUpdate);
@@ -129,14 +126,17 @@ public class RunnerServiceImpl implements RunnerService {
 		params.setMillisBetweenActions(millisBetween);
 		params.setLogReadLimit(logReadLimit);
 
-
 		//Ok now call the DB worker from this side of the Web call. 
-		DBWorker worker = new DBWorker(availibleKeys,params);
+		worker = new DBWorker(availibleKeys,params);
+	}
+
+	@Override
+	@WebMethod
+	public void run() {
 		
-		Measurement m = worker.doWork(runTime);
+		Measurement m = worker.doWork();
 		numberOfCalls = m.getCallNumber();
 		totalRunTime = m.getTimeTaken();
-		
 		
 
 	}

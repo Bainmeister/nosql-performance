@@ -21,7 +21,7 @@ public interface RunnerService{
 			int chanceOfBalanceTransfer, int chanceOfLogRead,
 			int chanceOfLogInsert);
 	
-	void run(long runTime);
+	void run();
     
 	long getTotalRunTime();
 	

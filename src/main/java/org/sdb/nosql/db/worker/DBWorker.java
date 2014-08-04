@@ -62,7 +62,7 @@ public class DBWorker{
 		this.contendedRecords = contendedRecords;
 		this.params = params;
 		
-		if (params.getDbType() == DBTypes.FOUNDATIONDB  && params.isCompensator()){
+		if (params.isCompensator()){
 			this.machine = new MongoCompensator(new MongoConnection());
 			
 		}else if (params.getDbType() == DBTypes.FOUNDATIONDB){
@@ -92,7 +92,7 @@ public class DBWorker{
 	}
 
 
-	public Measurement doWork(long runTime) {
+	public Measurement doWork() {
 		
 		int batchSize = params.getBatchSize();
 		Measurement measurement = new Measurement();
@@ -102,26 +102,22 @@ public class DBWorker{
 		if (machine == null){
 			System.out.println("Something is wrong.  No DBMachine was set");
 		}
-		
-		//Run batches for an alloted amount of time. 
-		long startTime = System.currentTimeMillis();
-		while (System.currentTimeMillis() < startTime+ runTime){
-			//Do the work get the measurements
-			for (int i = 0 ; i < batchSize;i++){
 				
-				//////////////RUN THE WORKLOAD///////////////////
-				long startTimeMillis = System.currentTimeMillis();
-				record = workload();
-				long endTimeMillis = System.currentTimeMillis();
-				//////////////RUN THE WORKLOAD///////////////////
-				
-				boolean success = (record.isSuccess())?true:false;
-				boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? true:false ;
-		    	measurement.addToMeasuement(1, success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
-		    	
-			}
+		//Do the work get the measurements
+		for (int i = 0 ; i < batchSize;i++){
+			
+			//////////////RUN THE WORKLOAD///////////////////
+			long startTimeMillis = System.currentTimeMillis();
+			record = workload();
+			long endTimeMillis = System.currentTimeMillis();
+			//////////////RUN THE WORKLOAD///////////////////
+			
+			boolean success = (record.isSuccess())?true:false;
+			boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? true:false ;
+	    	measurement.addToMeasuement(1, success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
+	    	
 		}
-    //	measurement.setTimeTaken( getFiniTimeMillis() - getInitTimeMillis());
+	
     	
 		return measurement;
 	}
