@@ -69,22 +69,22 @@ public class PerformanceTest {
 	private int threadCount = 150;
 	private int batchSize = 50;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
 	
-	private boolean isCompensator = false;
-	private int dbType = DBTypes.TOKUMX_TRANS_BoB;
-	private int contendedRecordNum = 2;	
+	private boolean isCompensator = true;
+	private int dbType = DBTypes.TOKUMX;
+	private int contendedRecordNum = 3;	
 	
 	
 	private void setTestParams() {
 
 		params.setChanceOfRead(1);
-		params.setChanceOfInsert(999);
-		params.setChanceOfUpdate(0);
+		params.setChanceOfInsert(0);
+		params.setChanceOfUpdate(999);
 		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
 		params.setChanceOfLogInsert(0);
 
-		params.setMaxTransactionSize(2);
-		params.setMinTransactionSize(2);
+		params.setMaxTransactionSize(3);
+		params.setMinTransactionSize(3);
 		params.setMillisBetweenActions(0);
 	
 		params.setLogReadLimit(1000);

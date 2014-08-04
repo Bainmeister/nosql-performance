@@ -28,6 +28,8 @@ public class InitializeAndCheckMongo {
 		for (int i=1; i < size+1; i++) {
 			counters.insert(new BasicDBObject("name", String.valueOf(i)).append("value", 0).append("tx", 0));
 		}
+		
+		mongo.close();
 	}
 	
 	
@@ -53,6 +55,8 @@ public class InitializeAndCheckMongo {
 		} finally {
 			allCounters.close();
 		}
+		mongo.close();
+		
 		return i;
 	}
 	

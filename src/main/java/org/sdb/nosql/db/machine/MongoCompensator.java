@@ -12,6 +12,9 @@ import org.sdb.nosql.db.performance.ActionRecord;
 
 public class MongoCompensator extends Mongo {
 
+	
+
+	
 	private AtomicInteger compensations = new AtomicInteger(0);
 
 	private int compensateProbability = 0;
@@ -19,7 +22,8 @@ public class MongoCompensator extends Mongo {
 	public MongoCompensator(MongoConnection connection) {
 		super(connection);
 	}
-
+	
+	//TODO I don't understand why the @Inject for doesnt work if not on the runnerService.. 
 	@Inject
 	private CounterService counterService;
 	

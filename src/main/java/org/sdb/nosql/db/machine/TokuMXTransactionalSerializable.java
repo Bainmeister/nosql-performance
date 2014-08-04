@@ -19,7 +19,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
 		final ActionRecord record = new ActionRecord();
-
+		
 		db.requestStart();
 		try {
 
@@ -31,17 +31,21 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 				// Lock the records
 				for (String key : keys)
 					collection.findOne(new BasicDBObject("name", key));
-
+				
 				// Update the records
 				boolean updateSucceeded = true;
 				for (String key : keys) {
+					
 					WriteResult write = collection.update(new BasicDBObject(
 							"name", key), new BasicDBObject("value", 2000));
+					
 					waitBetweenActions(waitMillis);
+					
 					if (write.getN() == 0){
 						updateSucceeded = false;
 						break; //out of the loop, no point in continuing. 
 					}
+					
 				}
 				// If either write failed, rollback the transaction.
 				db.command(updateSucceeded ? commitTransaction()

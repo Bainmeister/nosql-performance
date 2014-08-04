@@ -96,15 +96,17 @@ public class TokuMXTransactional extends TokuMX {
 				db.command(beginTransaction());
 				boolean updateSucceeded = true;
 				for (String key : keys){
-					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",2000));
+					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",0));
 					waitBetweenActions(waitMillis);	
-					if (write.getN() == 0)	
+					if (write.getN() == 0)	{
 						updateSucceeded =false;
+					}
 				}
 				//If either write failed, rollback the transaction.
 				db.command(updateSucceeded? commitTransaction() : rollbackTransaction());
 				record.setSuccess(updateSucceeded);
 			} catch (MongoException e){
+				System.out.println("Updated Lock Failure");
 				record.setSuccess(false);
 				db.command(rollbackTransaction());
 			}
