@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.ActionTypes;
 
 import com.foundationdb.Database;
 import com.foundationdb.Transaction;
@@ -57,7 +58,7 @@ public class FoundationDB implements DBMachine {
 
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
-			ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord(ActionTypes.READ);
 			// * START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 
@@ -89,7 +90,7 @@ public class FoundationDB implements DBMachine {
 
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
-			ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord(ActionTypes.INSERT);
 			// * START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 
@@ -116,7 +117,7 @@ public class FoundationDB implements DBMachine {
 		// Use the DB API to update a single line.
 		return db.run(new Function<Transaction, ActionRecord>() {
 			
-			ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord(ActionTypes.UPDATE);
 			
 			// START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
@@ -143,7 +144,7 @@ public class FoundationDB implements DBMachine {
 		
 		return db.run(new Function<Transaction, ActionRecord>() {
 
-			ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord(ActionTypes.BAL_TRAN);
 
 			// START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
@@ -171,7 +172,7 @@ public class FoundationDB implements DBMachine {
 	}
 
 	public ActionRecord logRead(final int waitMillis, final int limit) {
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.READ_LOG);
 
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
@@ -211,7 +212,7 @@ public class FoundationDB implements DBMachine {
 
 		// FDB API
 		return db.run(new Function<Transaction, ActionRecord>() {
-			ActionRecord record = new ActionRecord();
+			ActionRecord record = new ActionRecord(ActionTypes.INSERT_LOG);
 			// * START TRANSACTION *********************/
 			public ActionRecord apply(Transaction tr) {
 

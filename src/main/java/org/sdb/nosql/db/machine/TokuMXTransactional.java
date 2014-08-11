@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.ActionTypes;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
@@ -18,7 +19,7 @@ public class TokuMXTransactional extends TokuMX {
 	
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
-		ActionRecord record = new ActionRecord();
+		ActionRecord record = new ActionRecord(ActionTypes.READ);
 		
 		db.requestStart();
 		try{
@@ -28,9 +29,10 @@ public class TokuMXTransactional extends TokuMX {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction());
 				
-				for (String key : keys)
+				for (String key : keys){
 					collection.findOne(new BasicDBObject("name",key));
-				
+					waitBetweenActions(waitMillis);
+				}
 				db.command(rollbackTransaction());
 				
 			} catch (MongoException e){
@@ -45,7 +47,7 @@ public class TokuMXTransactional extends TokuMX {
 
 	@Override
 	public ActionRecord insert(int numberToAdd, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.INSERT);
 
 		// Attempts to make a individual name - this may not be too accurate if
 		// there
@@ -66,6 +68,7 @@ public class TokuMXTransactional extends TokuMX {
 				for (int i = 1; i < numberToAdd + 1; i++) {
 					collection.insert(new BasicDBObject("name", processNum + "_"
 							+ String.valueOf(i)).append("value", 0).append("tx", 0));
+					waitBetweenActions(waitMillis);
 				}
 
 				//If either write failed, rollback the transaction.
@@ -85,7 +88,8 @@ public class TokuMXTransactional extends TokuMX {
 	
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
+		
+		final ActionRecord record = new ActionRecord(ActionTypes.UPDATE);
 		
 		db.requestStart();
 		try{
@@ -94,22 +98,21 @@ public class TokuMXTransactional extends TokuMX {
 			try {
 				//MVCC will grab a snapshot and all the reads should come from the same one.
 				db.command(beginTransaction());
-				boolean updateSucceeded = true;
+				
+				int n = ThreadLocalRandom.current().nextInt(100);
+				
 				for (String key : keys){
-					WriteResult write = collection.update(new BasicDBObject("name",key),new BasicDBObject("value",0));
+					collection.update(new BasicDBObject("name",key),new BasicDBObject("value",n));
 					waitBetweenActions(waitMillis);	
-					if (write.getN() == 0)	{
-						updateSucceeded =false;
-					}
 				}
 				//If either write failed, rollback the transaction.
-				db.command(updateSucceeded? commitTransaction() : rollbackTransaction());
-				record.setSuccess(updateSucceeded);
+				db.command(commitTransaction());
+				record.setSuccess(true);
 			} catch (MongoException e){
-				System.out.println("Updated Lock Failure");
 				record.setSuccess(false);
 				db.command(rollbackTransaction());
 			}
+			
 			
 		}finally{
 			db.requestDone();
@@ -119,7 +122,7 @@ public class TokuMXTransactional extends TokuMX {
 
 	@Override
 	public ActionRecord balanceTransfer(String key1, String key2, int amount, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.BAL_TRAN);
 		
 		boolean updateSucceeded = false;
 		
@@ -180,7 +183,7 @@ public class TokuMXTransactional extends TokuMX {
 
 	@Override
 	public ActionRecord logRead(int waitMillis, int limit) {
-		ActionRecord record = new ActionRecord();
+		ActionRecord record = new ActionRecord(ActionTypes.READ_LOG);
 	
 		
 		
@@ -213,7 +216,7 @@ public class TokuMXTransactional extends TokuMX {
 	
 	@Override
 	public ActionRecord logInsert(int waitMillis) {
-		ActionRecord record = new ActionRecord();
+		ActionRecord record = new ActionRecord(ActionTypes.INSERT_LOG);
 		
 		// Attempts to make a individual identifier - this may not be too accurate if
 		// there

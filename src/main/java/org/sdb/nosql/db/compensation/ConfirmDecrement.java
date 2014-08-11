@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 
 import org.jboss.narayana.compensations.api.ConfirmationHandler;
 
@@ -26,6 +27,10 @@ public class ConfirmDecrement implements ConfirmationHandler {
         DB database = mongoClient.getDB("test");
         DBCollection accounts = database.getCollection("counters");
 
-        accounts.update(new BasicDBObject("name", String.valueOf(decrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("tx", 1)));
-    }
+        try{
+        	accounts.update(new BasicDBObject("name", String.valueOf(decrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("tx", 1)));
+		} catch (MongoException e){
+
+		}
+	}
 }

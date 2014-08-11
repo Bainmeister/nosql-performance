@@ -24,6 +24,7 @@ package org.sdb.nosql.performance;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.KeyStore;
 import java.util.LinkedList;
@@ -52,9 +53,9 @@ import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.keys.generation.KeyGen;
 import org.sdb.nosql.db.machine.DBMachine;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.Measurement;
 import org.sdb.nosql.db.worker.DBTypes;
 import org.sdb.nosql.db.worker.DBWorker;
-import org.sdb.nosql.db.worker.Measurement;
 import org.sdb.nosql.db.worker.WorkerParameters;
 
 import com.foundationdb.Database;
@@ -65,29 +66,31 @@ public class PerformanceTest {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	long runTime = 900000;
+	long runTime = 600000;
 	private int threadCount = 150;
-	private int batchSize = 50;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
+	private int batchSize = 5;  //Now running based upon time, batch size is not important - so to attain the most accurate readings it is now reduced to 1
 	
-	private boolean isCompensator = true;
-	private int dbType = DBTypes.TOKUMX;
-	private int contendedRecordNum = 3;	
-	
+	private boolean isCompensator = false;
+	private int dbType = DBTypes.MONGODB_COMPENSATION;
+	private int contendedRecordNum = 450;	
+
 	
 	private void setTestParams() {
 
+		
+		// PAY ATTENTION HERE !
 		params.setChanceOfRead(1);
 		params.setChanceOfInsert(0);
-		params.setChanceOfUpdate(999);
+		params.setChanceOfUpdate(1000);
 		params.setChanceOfBalanceTransfer(0);
 		params.setChanceOfLogRead(0);
 		params.setChanceOfLogInsert(0);
 
 		params.setMaxTransactionSize(3);
 		params.setMinTransactionSize(3);
-		params.setMillisBetweenActions(0);
+		params.setMillisBetweenActions(10);
 	
-		params.setLogReadLimit(1000);
+		params.setLogReadLimit(1);
 	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +108,7 @@ public class PerformanceTest {
 	
 	private List<String> contendedKeys = null;
 	
-	@Deployment
+	//@Deployment
 	public static WebArchive createTestArchive() {
 
 		//Use 'Shrinkwrap Resolver' to include the mongodb java driver in the deployment
@@ -191,22 +194,86 @@ public class PerformanceTest {
 		long totalWorkTime = 0;
 		long successful = 0;
 		long callsMade = 0;
+		
+		
+		
+		long totalReadErrors = 0;
+		long totalInsertErrors = 0;
+		long totalUpdateErrors = 0;
+		long totalBalTranErrors = 0;
+		long totalLogReadErrors = 0;
+		long totalLogWriteErrors = 0;
+		
+		long totalReadSuccess = 0;
+		long totalInsertSuccess = 0;
+		long totalUpdateSuccess = 0;
+		long totalBalTranSuccess = 0;
+		long totalLogReadSuccess = 0;
+		long totalLogWriteSuccess = 0;
+		
 		for (ClientThread t : threads){
 			totalErrors = totalErrors + t.getTotalErrors();
 			totalWorkTime=totalWorkTime+ t.getTotalTime();
 			successful = successful+ t.getSuccessful();
 			callsMade = callsMade +t.getCallNumber();
+			
+			
+			totalReadErrors = totalReadErrors + t.getTotalReadErrors();
+			totalInsertErrors = totalInsertErrors + t.getTotalInsertErrors();
+			totalUpdateErrors = totalUpdateErrors + t.getTotalUpdateErrors();
+			totalBalTranErrors = totalBalTranErrors + t.getTotalBalTranErrors();
+			totalLogReadErrors = totalLogReadErrors + t.getTotalLogReadErrors();
+			totalLogWriteErrors = totalLogWriteErrors + t.getTotalLogWriteErrors();
+			
+			totalReadSuccess = totalReadSuccess + t.getTotalReadSuccess();
+			totalInsertSuccess = totalInsertSuccess + t.getTotalInsertSuccess();
+			totalUpdateSuccess = totalUpdateSuccess + t.getTotalUpdateSuccess();
+			totalBalTranSuccess = totalBalTranSuccess + t.getTotalBalTranSuccess();
+			totalLogReadSuccess = totalLogReadSuccess + t.getTotalLogReadSuccess();
+			totalLogWriteSuccess = totalLogWriteSuccess + t.getTotalLogWriteSuccess();	
+			
 		}
 		
 		
-		
+		System.out.println("OVERALL OUTCOME: ");
 		if (params.isCompensator() == true)
 			System.out.println("COMPENSATION BASED");
-		System.out.println("Time taken: "+ totalWorkTime);
-		System.out.println("Calls Made: " + callsMade);
-		System.out.println("Failures:   " + totalErrors);
-		System.out.println("Successful: "+ successful);
+		System.out.println("Time taken:                "+ totalWorkTime);
+		System.out.println("Calls Made:                " + callsMade);
+		System.out.println("Failures:                  " + totalErrors);
+		System.out.println("Successful:                "+ successful);
 		System.out.println("***************************");
+		System.out.println("SCECIFIC OUTCOMES: ");
+		
+		if (totalReadErrors > 0 || totalReadSuccess > 0){
+			System.out.println("Read Success:              " + totalReadSuccess);
+			System.out.println("Read Failuers:             " + totalReadErrors);
+		}
+		
+		if (totalInsertErrors > 0 || totalInsertSuccess > 0){
+			System.out.println("Insert Success:            " + totalInsertSuccess);
+			System.out.println("Insert Failuers:           " + totalInsertErrors);
+		}
+		
+		if (totalUpdateErrors > 0 || totalUpdateSuccess > 0){
+			System.out.println("Update Success:            " + totalUpdateSuccess);
+			System.out.println("Update Failuers:           " + totalUpdateErrors);
+		}
+		
+		if (totalBalTranErrors > 0 || totalBalTranSuccess > 0){
+			System.out.println("Balance Transfer Success:  " + totalBalTranSuccess);
+			System.out.println("Balance Transfer Failures: " + totalBalTranErrors);
+		}
+		
+		if (totalLogReadErrors > 0 || totalLogReadSuccess > 0){
+			System.out.println("Log Read Success:          " + totalLogReadSuccess);
+			System.out.println("Log Read Failuers:         " + totalLogReadErrors);
+		}
+		
+		if (totalLogWriteErrors > 0 || totalLogWriteSuccess > 0){
+			System.out.println("Log Write Success:         " + totalLogWriteSuccess);
+			System.out.println("Log Write Failuers:        " + totalLogWriteErrors);
+		}
 	}
 
 	@After
@@ -239,8 +306,67 @@ public class PerformanceTest {
 		private long totalTime = 0;
 		private long successful = 0;
 		private long callsMade = 0;
-		
-		private RunnerService runnerService;
+
+		public long getTotalReadErrors() {
+			return totalReadErrors;
+		}
+
+		public long getTotalInsertErrors() {
+			return totalInsertErrors;
+		}
+
+		public long getTotalUpdateErrors() {
+			return totalUpdateErrors;
+		}
+
+		public long getTotalBalTranErrors() {
+			return totalBalTranErrors;
+		}
+
+		public long getTotalLogReadErrors() {
+			return totalLogReadErrors;
+		}
+
+		public long getTotalLogWriteErrors() {
+			return totalLogWriteErrors;
+		}
+
+		public long getTotalReadSuccess() {
+			return totalReadSuccess;
+		}
+
+		public long getTotalInsertSuccess() {
+			return totalInsertSuccess;
+		}
+
+		public long getTotalBalTranSuccess() {
+			return totalBalTranSuccess;
+		}
+
+		public long getTotalUpdateSuccess() {
+			return totalUpdateSuccess;
+		}
+
+		public long getTotalLogReadSuccess() {
+			return totalLogReadSuccess;
+		}
+
+		public long getTotalLogWriteSuccess() {
+			return totalLogWriteSuccess;
+		}
+
+		private long totalReadErrors;
+		private long totalInsertErrors;
+		private long totalUpdateErrors;
+		private long totalBalTranErrors;
+		private long totalLogReadErrors;
+		private long totalLogWriteErrors;
+		private long totalReadSuccess;
+		private long totalInsertSuccess;
+		private long totalBalTranSuccess;
+		private long totalUpdateSuccess;
+		private long totalLogReadSuccess;
+		private long totalLogWriteSuccess;
 		
 		ClientThread(List<String> contendedKeys, WorkerParameters params, long runTime){
 			this.contendedKeys = contendedKeys;
@@ -253,9 +379,11 @@ public class PerformanceTest {
 			
 			DBWorker worker= null;
 			
+			RunnerService runnerService =null;
+			
+			
 			//Set up the DB worker
 			if (params.isCompensator()){
-				
 				
 				//The db worker is setup on the receiver in these next calls. 
 				runnerService = createWebServiceClient();
@@ -287,7 +415,8 @@ public class PerformanceTest {
 					//Collect some results
 					totalTime = totalTime+ runnerService.getTotalRunTime();
 					callsMade = callsMade+ runnerService.getNumberOfCalls();
-				
+					successful = successful + runnerService.getTotalSuccess();
+					totalErrors = totalErrors + runnerService.getTotalFail();
 				
 				}else{
 									
@@ -297,6 +426,23 @@ public class PerformanceTest {
 					totalTime = totalTime + m.getTimeTaken();
 					successful =  successful + m.getSuccessful();
 					callsMade = callsMade + m.getCallNumber();
+					
+					totalReadErrors = totalReadErrors + m.getFailedReads();
+					totalInsertErrors = totalInsertErrors + m.getFailedInserts();
+					totalUpdateErrors = totalUpdateErrors + m.getFailedUpdates();
+					totalBalTranErrors = totalBalTranErrors + m.getFailedBalTrans();
+					totalLogReadErrors = totalLogReadErrors + m.getFailedLogReads();
+					totalLogWriteErrors = totalLogWriteErrors + m.getFailedLogWrites();
+					
+					totalReadSuccess = totalReadSuccess + m.getSuccessfulReads();
+					totalInsertSuccess = totalInsertSuccess + m.getSuccessfulInserts();
+					totalUpdateSuccess = totalUpdateSuccess + m.getSuccessfulUpdates();
+					totalBalTranSuccess = totalBalTranSuccess + m.getSuccessfulBalTrans();
+					totalLogReadSuccess = totalLogReadSuccess + m.getSuccessfulLogReads();
+					totalLogWriteSuccess = totalLogWriteSuccess + m.getSuccessfulLogWrites();
+					
+					
+					
 				}
 			}
 		}

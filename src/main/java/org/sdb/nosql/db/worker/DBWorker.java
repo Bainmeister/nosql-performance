@@ -38,6 +38,8 @@ import org.sdb.nosql.db.machine.TokuMXTransactionalBestOfBoth;
 import org.sdb.nosql.db.machine.TokuMXTransactionalMVCC;
 import org.sdb.nosql.db.machine.TokuMXTransactionalSerializable;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.ActionTypes;
+import org.sdb.nosql.db.performance.Measurement;
 
 /**
  * @author <a href="mailto:s.bain@newcastle.ac.uk">Simon Bain</a>
@@ -74,6 +76,9 @@ public class DBWorker{
 		}else if (params.getDbType() == DBTypes.MONGODB){
 			this.machine = new Mongo(new MongoConnection());
 			
+		}else if (params.getDbType() == DBTypes.MONGODB_COMPENSATION){
+			this.machine = new MongoCompensator(new MongoConnection());
+				
 		}else if (params.getDbType() == DBTypes.TOKUMX){
 			this.machine = new TokuMX(new MongoConnection());
 			
@@ -113,8 +118,9 @@ public class DBWorker{
 			//////////////RUN THE WORKLOAD///////////////////
 			
 			boolean success = (record.isSuccess())?true:false;
-			boolean failed = ( record ==null || !record.isSuccess() || record.isDataFailue() || record.isLockFailure() )? true:false ;
-	    	measurement.addToMeasuement(1, success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
+			boolean failed = ( record ==null || !record.isSuccess()) ? true : false ;
+	    	
+			measurement.addToMeasuement(1, record.getActionType() ,success?1:0, failed?1:0, endTimeMillis-startTimeMillis);
 	    	
 		}
 	
@@ -123,7 +129,6 @@ public class DBWorker{
 	}
 	
     private ActionRecord workload( ) {
-    	ActionRecord record = new ActionRecord();
     	
     	final int transactionSize = params.getMaxTransactionSize() == params.getMinTransactionSize() ? params.getMaxTransactionSize():ThreadLocalRandom.current().nextInt(params.getMaxTransactionSize())+params.getMinTransactionSize(); 
     	List<String> keysToUse = getKeysForTransaction(transactionSize); 
@@ -132,25 +137,26 @@ public class DBWorker{
     	final int rand1 = ThreadLocalRandom.current() .nextInt(1000);
     	
     	if (rand1< params.getChanceOfRead()){
-    		record = machine.read(keysToUse,params.getMillisBetweenActions());
+    		return machine.read(keysToUse,params.getMillisBetweenActions());
     		
     	}else if(rand1 < params.getChanceOfInsert()){
-        		record = machine.insert(transactionSize, params.getMillisBetweenActions());	
+    		return machine.insert(transactionSize, params.getMillisBetweenActions());	
     
     	}else if(rand1 < params.getChanceOfUpdate()){
-    		record = machine.update(keysToUse, params.getMillisBetweenActions());	
+    		return machine.update(keysToUse, params.getMillisBetweenActions());	
     	      	
     	}else if (rand1 < params.getChanceOfBalanceTransfer()){
     		
-    		record = machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
+    		return machine.balanceTransfer(keysToUse.get(0), keysToUse.get(1),10 , params.getMillisBetweenActions());
     	
     	}else if (rand1 < params.getChanceOfLogRead()){
-    		record = machine.logRead(params.getMillisBetweenActions(), params.getLogReadLimit());
+    		return machine.logRead(params.getMillisBetweenActions(), params.getLogReadLimit());
     		
     	}else if (rand1 < params.getChanceOfLogInsert()){
-    		record = machine.logInsert( params.getMillisBetweenActions());
+    		return machine.logInsert( params.getMillisBetweenActions());
     	}
-		return record;
+    	
+		return null;
 	}
 
     private List<String> getKeysForTransaction(int numberToGet){

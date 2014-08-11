@@ -31,30 +31,54 @@ public class CounterService {
 	public void updateCounters(String string, String string2, int amount,
 			double compensateProbability, DBCollection col, int waitMillis) {
     	
-    	counterManager.incrimentCounter(string, amount, col );
+    	boolean success1 = counterManager.incrimentCounter(string, amount, col );
     	waitBetweenActions(waitMillis);
-        counterManager.decrementCounter(string2, amount,col );
+    	boolean success2 = counterManager.decrementCounter(string2, amount,col );
 
-        if (rand.nextDouble() <= compensateProbability) {
-            compensationManager.setCompensateOnly();
+    	boolean success = true; 
+    			
+        if (!success1 || !success2)
+        	success=false;
+        
+        if (!success) {
+           compensationManager.setCompensateOnly();
         }
 		
 	}
     
     @Compensatable
-	public void update(List<String> keys, double compensateProbability,
+	public void update(List<String> keys, double success,
 			DBCollection collection, int waitMillis) {
     	
+    	boolean success3 = true;
+    	
     	for (String key : keys){
-    		counterManager.incrimentCounter(key, 10, collection );
+    		if(! counterManager.incrimentCounter(key, 10, collection ))
+    			success3 = false;
+    		
     		waitBetweenActions(waitMillis);
     		
-            if (rand.nextDouble() <= compensateProbability) {
-                compensationManager.setCompensateOnly();
+            if (!success3) {
+               compensationManager.setCompensateOnly();
             }
     	}
     	
 	}
+    
+    @Compensatable
+	public void insert(List<String> keys, int amount,
+			double compensateProbability, DBCollection col, int waitMillis) {
+    	
+    	
+    	for (String key : keys){
+        	boolean success1 = counterManager.insertCounter(key, amount, col );
+        	waitBetweenActions(waitMillis);
+    	}
+    	
+ 
+		
+	}
+    
     
 	public void waitBetweenActions(int millis) {
 		

@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 
 import org.jboss.narayana.compensations.api.CompensationHandler;
 
@@ -28,7 +29,10 @@ public class UndoIncrement implements CompensationHandler {
 
         System.out.println(incrementCounterData.getCounter());
         System.out.println(incrementCounterData.getAmount());
+        try{
+        	accounts.update(new BasicDBObject("name", String.valueOf(incrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("value", -1 * incrementCounterData.getAmount())));
+		} catch (MongoException e){
 
-        accounts.update(new BasicDBObject("name", String.valueOf(incrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("value", -1 * incrementCounterData.getAmount())));
-    }
+		}
+     }
 }

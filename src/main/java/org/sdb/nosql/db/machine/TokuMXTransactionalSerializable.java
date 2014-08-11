@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.sdb.nosql.db.connection.MongoConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.ActionTypes;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
@@ -18,7 +19,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 	//Updates work differently, as we need to lock records manually
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.UPDATE);
 		
 		db.requestStart();
 		try {
@@ -42,8 +43,8 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 					waitBetweenActions(waitMillis);
 					
 					if (write.getN() == 0){
-						updateSucceeded = false;
-						break; //out of the loop, no point in continuing. 
+						//updateSucceeded = false;
+						//break; //out of the loop, no point in continuing. 
 					}
 					
 				}
@@ -66,7 +67,7 @@ public class TokuMXTransactionalSerializable extends TokuMXTransactional {
 	@Override
 	public ActionRecord balanceTransfer(String key1, String key2, int amount,
 			int waitMillis) {
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.BAL_TRAN);
 		
 		boolean updateSucceeded = false;
 		record.setSuccess(false);

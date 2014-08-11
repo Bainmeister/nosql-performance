@@ -103,7 +103,7 @@ public class InitializeAndCheckFDB {
 	static void initFDB(final int i) {
 
 		FDB fdb = FDB.selectAPIVersion(200);
-		Database db = fdb.open();
+	    Database db = fdb.open();
 
 		db.run(new Function<Transaction, Void>() {
 

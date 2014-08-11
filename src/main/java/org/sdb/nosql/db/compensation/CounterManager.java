@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 
 import org.jboss.narayana.compensations.api.CompensationManager;
 import org.jboss.narayana.compensations.api.TxCompensate;
@@ -29,6 +30,9 @@ public class CounterManager {
     @Inject
     DecrementCounterData decrementCounterData;
 
+    @Inject
+    InsertCounterData insertCounterData;
+    
     private static ThreadLocal<MongoClient> mongoClients = new ThreadLocal<MongoClient>();
 
     public CounterManager() {
@@ -41,15 +45,19 @@ public class CounterManager {
     }
     @TxCompensate(UndoIncrement.class)
     @TxConfirm(ConfirmIncrement.class)
-	public void incrimentCounter(String key, int amount,  DBCollection col) {
+	public boolean incrimentCounter(String key, int amount,  DBCollection col) {
         
     	incrementCounterData.setoID(key);
         incrementCounterData.setAmount(amount);
 		incrementCounterData.setCounterAndAmount(key,amount);
         
-        col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", amount)));
-	
-	}
+		try{
+			col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", amount)));
+		} catch (MongoException e){
+			return false;
+		}
+		return true;
+    }
     
 
     public void decrementCounter(int counter, int amount, DBCollection col) {
@@ -57,14 +65,19 @@ public class CounterManager {
     }
     @TxCompensate(UndoDecrement.class)
     @TxConfirm(ConfirmDecrement.class)
-	public void decrementCounter(String key, int amount, DBCollection col)  {
+	public boolean decrementCounter(String key, int amount, DBCollection col)  {
 
         decrementCounterData.setoID(key);
         decrementCounterData.setAmount(amount);
 		incrementCounterData.setCounterAndAmount(key,amount);
-
-        col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", -1 * amount)));
-
+		
+		try{
+			col.update(new BasicDBObject("name", key), new BasicDBObject("$inc", new BasicDBObject("value", -1 * amount)));
+		} catch (MongoException e){
+			return false;
+		}
+		
+		return true;
     }
     
     public static MongoClient getMongoClient() {
@@ -79,5 +92,22 @@ public class CounterManager {
             throw new RuntimeException("Failed to connect to MongoDB", e);
         }
     }
+
+    @TxCompensate(UndoInsert.class)
+    @TxConfirm(ConfirmInsert.class)
+	public boolean insertCounter(String key, int amount, DBCollection col) {
+        
+		insertCounterData.setoID(key);
+		insertCounterData.setAmount(amount);
+		insertCounterData.setCounterAndAmount(key,amount);
+		
+		try{
+			col.insert(new BasicDBObject("name", key).append("value", 0).append("tx", 0));
+		} catch (MongoException e){
+			return false;
+		}
+		
+		return true;
+	}
 
 }

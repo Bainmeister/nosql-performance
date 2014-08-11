@@ -6,29 +6,31 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 
-import org.jboss.narayana.compensations.api.ConfirmationHandler;
+import org.jboss.narayana.compensations.api.CompensationHandler;
 
 import javax.inject.Inject;
 
 /**
- * @author paul.robinson@redhat.com 28/06/2014
+ * This compensation handler is used to undo a credit operation.
+ *
+ * @author paul.robinson@redhat.com 09/01/2014
  */
-public class ConfirmIncrement implements ConfirmationHandler {
+public class UndoInsert implements CompensationHandler {
 
     @Inject
-    IncrementCounterData incrementCounterData;
+    InsertCounterData insertCounterData;
 
     @Override
-    public void confirm() {
+    public void compensate() {
 
         MongoClient mongoClient = CounterManager.getMongoClient();
         DB database = mongoClient.getDB("test");
         DBCollection accounts = database.getCollection("counters");
-        
+
         try{
-        	accounts.update(new BasicDBObject("name", String.valueOf(incrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("tx", 1)));
+        	accounts.remove(new BasicDBObject("name", String.valueOf(insertCounterData.getCounter())));
 		} catch (MongoException e){
 
 		}
-      }
+    }
 }

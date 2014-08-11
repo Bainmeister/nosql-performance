@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.sdb.nosql.db.connection.FoundationConnection;
 import org.sdb.nosql.db.performance.ActionRecord;
+import org.sdb.nosql.db.performance.ActionTypes;
 
 import com.foundationdb.FDBException;
 import com.foundationdb.Transaction;
@@ -20,7 +21,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	@Override
 	public ActionRecord read(List<String> keys, int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.READ);
 
 		Transaction tr1 = db.createTransaction();
 		record.setSuccess(true);
@@ -53,7 +54,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	@Override
 	public ActionRecord insert(int number, int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.INSERT);
 
 		final String processNum = System.currentTimeMillis() + "_"
 				+ ThreadLocalRandom.current().nextInt(10) + ""
@@ -93,7 +94,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	@Override
 	public ActionRecord update(List<String> keys, int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.UPDATE);
 
 		Transaction tr1 = db.createTransaction();
 		record.setSuccess(true);
@@ -129,7 +130,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	public ActionRecord balanceTransfer(final String key1, final String key2,
 			final int amount, final int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.BAL_TRAN);
 
 		Transaction tr1 = db.createTransaction();
 		record.setSuccess(true);
@@ -169,7 +170,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	@Override
 	public ActionRecord logRead(int waitMillis, int limit) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.READ_LOG);
 
 		Transaction tr1 = db.createTransaction();
 		record.setSuccess(true);
@@ -210,7 +211,7 @@ public class FoundationDBNoRetry extends FoundationDB {
 	@Override
 	public ActionRecord logInsert(int waitMillis) {
 
-		final ActionRecord record = new ActionRecord();
+		final ActionRecord record = new ActionRecord(ActionTypes.INSERT_LOG);
 
 		final String processNum = System.currentTimeMillis() + "_"
 				+ ThreadLocalRandom.current().nextInt(10) + ""
@@ -249,4 +250,5 @@ public class FoundationDBNoRetry extends FoundationDB {
 
 		return record;
 	}
+
 }

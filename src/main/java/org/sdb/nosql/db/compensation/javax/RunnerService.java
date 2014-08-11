@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.jws.WebService;
 
-import org.sdb.nosql.db.worker.Measurement;
+import org.sdb.nosql.db.performance.Measurement;
 
 import com.mongodb.DBCollection;
 
@@ -30,6 +30,10 @@ public interface RunnerService{
 	void setParams(int maxTransactionSize, int minTransactionSize,
 			double compensateProbability, int batchSize, int millisBetween,
 			int logReadLimit, int contendedRecords);
+
+	long getTotalSuccess();
+
+	long getTotalFail();
 
     
 }

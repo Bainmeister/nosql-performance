@@ -11,12 +11,14 @@ import org.jboss.narayana.compensations.api.ConfirmationHandler;
 import javax.inject.Inject;
 
 /**
- * @author paul.robinson@redhat.com 28/06/2014
+ * This compensation handler is used to undo a credit operation.
+ *
+ * @author paul.robinson@redhat.com 09/01/2014
  */
-public class ConfirmIncrement implements ConfirmationHandler {
+public class ConfirmInsert implements ConfirmationHandler {
 
     @Inject
-    IncrementCounterData incrementCounterData;
+    InsertCounterData insertCounterData;
 
     @Override
     public void confirm() {
@@ -24,11 +26,11 @@ public class ConfirmIncrement implements ConfirmationHandler {
         MongoClient mongoClient = CounterManager.getMongoClient();
         DB database = mongoClient.getDB("test");
         DBCollection accounts = database.getCollection("counters");
-        
+
         try{
-        	accounts.update(new BasicDBObject("name", String.valueOf(incrementCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("tx", 1)));
+        	accounts.update(new BasicDBObject("name", String.valueOf(insertCounterData.getCounter())), new BasicDBObject("$inc", new BasicDBObject("tx", 1)));
 		} catch (MongoException e){
 
 		}
-      }
+	}
 }

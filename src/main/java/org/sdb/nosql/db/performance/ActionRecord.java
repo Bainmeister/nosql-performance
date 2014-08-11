@@ -30,8 +30,15 @@ public class ActionRecord {
 
 	private int attemptsTaken = 0;
 	private boolean success = true;
-	private boolean lockFailure = false;
-	private boolean dataFailue = false;
+	private int actionType;
+	
+	
+	@SuppressWarnings("unused")
+	private ActionRecord(){}
+	
+	public ActionRecord(int actionType){
+		this.actionType = actionType; 
+	}
 	
 	
 	//Methods for getting & setting 
@@ -41,25 +48,21 @@ public class ActionRecord {
 	public void setAttemptsTaken(int attemptsTaken) {
 		this.attemptsTaken = attemptsTaken;
 	}
-	
 	public boolean isSuccess() {
 		return success;
 	}
 	public void setSuccess(boolean success) {
 		this.success = success;
 	}
-	public boolean isLockFailure() {
-		return lockFailure;
+
+	public int getActionType() {
+		return actionType;
 	}
-	public void setLockFailure(boolean lockFailure) {
-		this.lockFailure = lockFailure;
+
+	public void setActionType(int actionType) {
+		this.actionType = actionType;
 	}
-	public boolean isDataFailue() {
-		return dataFailue;
-	}
-	public void setDataFailue(boolean dataFailue) {
-		this.dataFailue = dataFailue;
-	}
+
 	
 	
 	
